@@ -10,6 +10,7 @@
   :root {
     --bg: #0a0a0a;
     --card: rgba(255,255,255,0.02);
+    --card-hover: rgba(255,255,255,0.04);
     --border: rgba(255,255,255,0.08);
     --text: #e5e5e5;
     --dim: #888;
@@ -22,51 +23,45 @@
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg); color: var(--text);
     font-family: 'Inter', system-ui, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 14px; line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
-  .container {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 32px 24px 64px;
-  }
+  .container { max-width: 1280px; margin: 0 auto; padding: 32px 24px 64px; }
   .mono { font-family: 'JetBrains Mono', monospace; }
 
-  /* Header */
   header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
-  header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
-  header p { font-size: 12px; color: var(--dim); }
-  header p .live { color: var(--green); }
-  header p .live::before { content: '●'; margin-right: 4px; animation: pulse 2s infinite; }
+  header .left h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  header .left p { font-size: 12px; color: var(--dim); }
+  header .left .live { color: var(--green); }
+  header .left .live::before { content: '●'; margin-right: 4px; animation: pulse 2s infinite; }
+  header .right { display: flex; align-items: center; gap: 16px; }
+  header .price-display { text-align: right; }
+  header .price-display .price-usd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px; font-weight: 700; color: #fff; line-height: 1;
+  }
+  header .price-display .price-change {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; margin-top: 4px;
+  }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
   .refresh-box {
     display: flex; align-items: center; gap: 12px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-size: 11px;
-    color: var(--dim);
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 14px;
+    font-size: 11px; color: var(--dim);
   }
   .refresh-box .countdown { color: var(--text); font-weight: 600; min-width: 18px; text-align: right; }
 
-  /* Sections */
   section { margin-bottom: 32px; }
   section h2 {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--dim);
-    margin-bottom: 12px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 12px;
   }
 
-  /* Card grid */
   .grid { display: grid; gap: 12px; }
   .grid-4 { grid-template-columns: repeat(4, 1fr); }
   .grid-3 { grid-template-columns: repeat(3, 1fr); }
@@ -78,14 +73,12 @@
   @media (max-width: 540px) {
     .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
     .container { padding: 20px 14px 40px; }
-    header h1 { font-size: 18px; }
+    header .left h1 { font-size: 18px; }
   }
 
   .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px 18px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px;
   }
   .card-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dimmer); margin-bottom: 8px; }
   .card-value { font-size: 24px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #fff; line-height: 1; }
@@ -96,82 +89,86 @@
   .card-value.blue { color: var(--blue); }
   .card-value.purple { color: var(--purple); }
 
-  /* Table */
   table { width: 100%; border-collapse: collapse; }
   table th, table td {
-    padding: 10px 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    font-size: 12px;
+    padding: 10px 12px; text-align: left;
+    border-bottom: 1px solid var(--border); font-size: 12px;
   }
   table th {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--dimmer);
-    border-bottom: 1px solid var(--border);
+    font-size: 9px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--dimmer);
   }
   table td.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
   table td.right { text-align: right; }
+  tbody tr:hover { background: var(--card-hover); }
   .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; overflow-x: auto; }
 
-  /* Progress bar */
-  .bar {
-    width: 80px;
-    height: 4px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 2px;
-    overflow: hidden;
-    display: inline-block;
-    vertical-align: middle;
-  }
-  .bar > div {
-    height: 100%;
-    background: var(--green);
-    border-radius: 2px;
-    transition: width 0.5s ease;
-  }
+  .bar { width: 80px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }
+  .bar > div { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.5s ease; }
   .bar.warn > div { background: var(--amber); }
   .bar.crit > div { background: var(--red); }
 
-  /* Charts */
   .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
-  .chart-wrap { position: relative; height: 280px; }
+  .chart-wrap { position: relative; height: 320px; }
   .chart-wrap.donut { height: 240px; }
+  .chart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+  .timeframe-buttons { display: flex; gap: 4px; background: rgba(255,255,255,0.03); border-radius: 6px; padding: 3px; }
+  .timeframe-buttons button {
+    background: transparent; border: 0; color: var(--dim);
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+    padding: 5px 10px; border-radius: 4px; cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .timeframe-buttons button:hover { color: var(--text); }
+  .timeframe-buttons button.active { background: rgba(255,255,255,0.08); color: #fff; }
 
-  /* Footer */
   footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 11px; color: var(--dimmer); }
   footer .links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
   footer a { color: var(--dim); text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
   footer a:hover { color: var(--text); }
-
-  /* Loading skeleton */
-  .skeleton {
-    background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
-    border-radius: 4px;
-    color: transparent;
-  }
-  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 </style>
 </head>
 <body>
 <div class="container">
 
   <header>
-    <div>
+    <div class="left">
       <h1>WORLD Protocol — Analytics</h1>
       <p>Base Sepolia Testnet · <span class="live">live</span></p>
     </div>
-    <div class="refresh-box">
-      <span>refresh in</span>
-      <span class="countdown" id="countdown">30</span>
-      <span>s</span>
+    <div class="right">
+      <div class="price-display">
+        <div class="price-usd" id="header-price">$—</div>
+        <div class="price-change" id="header-price-change">—</div>
+      </div>
+      <div class="refresh-box">
+        <span>refresh in</span>
+        <span class="countdown" id="countdown">30</span>
+        <span>s</span>
+      </div>
     </div>
   </header>
 
+  <!-- Price chart with timeframe selector -->
+  <section>
+    <div class="chart-card">
+      <div class="chart-header">
+        <h2 style="margin: 0;">WORLD / USD — Live Price</h2>
+        <div class="timeframe-buttons" id="tf-buttons">
+          <button data-tf="1H">1H</button>
+          <button data-tf="4H">4H</button>
+          <button data-tf="12H">12H</button>
+          <button data-tf="24H">24H</button>
+          <button data-tf="ALL" class="active">ALL</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="price-chart"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Protocol Overview -->
   <section>
     <h2>Protocol Overview</h2>
     <div class="grid grid-4">
@@ -181,25 +178,26 @@
         <div class="card-sub" id="deploy-date">since deploy</div>
       </div>
       <div class="card">
-        <div class="card-label">Blocks Elapsed</div>
-        <div class="card-value blue" id="blocks">—</div>
-        <div class="card-sub">since deploy block</div>
-      </div>
-      <div class="card">
         <div class="card-label">Total Glazes</div>
-        <div class="card-value amber" id="glazes">—</div>
-        <div class="card-sub">5h window estimate</div>
+        <div class="card-value amber" id="total-glazes">—</div>
+        <div class="card-sub" id="glazes-rate">/ hour</div>
       </div>
       <div class="card">
-        <div class="card-label">Total Minted</div>
-        <div class="card-value purple" id="minted">—</div>
-        <div class="card-sub" id="minted-pct">% of max supply</div>
+        <div class="card-label">Total ETH Volume</div>
+        <div class="card-value blue" id="eth-volume">—</div>
+        <div class="card-sub" id="eth-volume-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Bot vs Human</div>
+        <div class="card-value purple" id="bot-pct">—</div>
+        <div class="card-sub" id="bot-vs-human">— bot · — human</div>
       </div>
     </div>
   </section>
 
+  <!-- Pool Analytics -->
   <section>
-    <h2>Pool — Uniswap V3 (1%)</h2>
+    <h2>Pool Analytics</h2>
     <div class="grid grid-4">
       <div class="card">
         <div class="card-label">WETH Reserve</div>
@@ -212,25 +210,26 @@
         <div class="card-sub" id="world-reserve-usd">$—</div>
       </div>
       <div class="card">
-        <div class="card-label">Token Price</div>
-        <div class="card-value amber" id="price">—</div>
-        <div class="card-sub" id="price-usd">$—</div>
+        <div class="card-label">Fee Revenue</div>
+        <div class="card-value green" id="fee-revenue">—</div>
+        <div class="card-sub" id="fee-revenue-sub">since deploy</div>
       </div>
       <div class="card">
-        <div class="card-label">Price Δ vs deploy</div>
-        <div class="card-value" id="price-change">—</div>
-        <div class="card-sub" id="price-deploy">deploy: 1.857e-7 ETH</div>
+        <div class="card-label">Net WORLD Sold</div>
+        <div class="card-value amber" id="world-sold">—</div>
+        <div class="card-sub" id="world-sold-sub">into pool</div>
       </div>
     </div>
   </section>
 
+  <!-- Mining -->
   <section>
     <h2>Mining</h2>
     <div class="grid grid-3">
       <div class="card">
         <div class="card-label">Total Minted</div>
         <div class="card-value purple" id="mining-minted">—</div>
-        <div class="card-sub" id="mining-minted-usd">$—</div>
+        <div class="card-sub" id="mining-minted-pct">% of max</div>
       </div>
       <div class="card">
         <div class="card-label">Mining Rate</div>
@@ -245,9 +244,56 @@
     </div>
   </section>
 
+  <!-- Per-Continent Analytics -->
+  <section>
+    <h2>Per-Continent Analytics</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Continent</th>
+            <th class="right">Total Glazes</th>
+            <th class="right">Avg Hold Time</th>
+            <th class="right">Avg Entry Decay %</th>
+            <th class="right">Avg Price Paid</th>
+            <th class="right">Total ETH Volume</th>
+          </tr>
+        </thead>
+        <tbody id="continents-tbody">
+          <tr><td colspan="6" style="text-align:center;color:var(--dimmer);padding:20px">loading event history…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Bot Performance -->
+  <section>
+    <h2>Bot Performance</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Wallet</th>
+            <th>Continent</th>
+            <th class="right">Cycles</th>
+            <th class="right">Avg Hold (min)</th>
+            <th class="right">ETH In</th>
+            <th class="right">ETH Out</th>
+            <th class="right">Gas Est</th>
+            <th class="right">P&amp;L</th>
+          </tr>
+        </thead>
+        <tbody id="bot-perf-tbody">
+          <tr><td colspan="8" style="text-align:center;color:var(--dimmer);padding:20px">loading event history…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Staking -->
   <section>
     <h2>Staking</h2>
-    <div class="grid grid-3">
+    <div class="grid grid-4">
       <div class="card">
         <div class="card-label">Total Staked</div>
         <div class="card-value green" id="total-staked">—</div>
@@ -263,9 +309,15 @@
         <div class="card-value blue" id="reward-per-token">—</div>
         <div class="card-sub mono">accumulator</div>
       </div>
+      <div class="card">
+        <div class="card-label">Total ETH Distributed</div>
+        <div class="card-value purple" id="total-distributed">—</div>
+        <div class="card-sub" id="total-distributed-sub">est. (2% of glaze vol)</div>
+      </div>
     </div>
   </section>
 
+  <!-- Bot Wallets -->
   <section>
     <h2>Bot Wallets</h2>
     <div class="table-wrap">
@@ -288,25 +340,8 @@
     </div>
   </section>
 
-  <section>
-    <div class="grid grid-2">
-      <div class="chart-card">
-        <h2 style="margin-bottom: 16px;">Fee Distribution</h2>
-        <div class="chart-wrap donut">
-          <canvas id="fee-chart"></canvas>
-        </div>
-      </div>
-      <div class="chart-card">
-        <h2 style="margin-bottom: 16px;">Token Price (ETH)</h2>
-        <div class="chart-wrap">
-          <canvas id="price-chart"></canvas>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <footer>
-    <div>WORLD Protocol Analytics · auto-refresh 30s · all data live from RPC</div>
+    <div>WORLD Protocol Analytics · auto-refresh 30s · all data live from RPC + on-chain events</div>
     <div class="links">
       <a href="https://sepolia.basescan.org/address/0xb9b9d6f22280bf2b74855e7da1ad7d85c1bd5fdb" target="_blank" rel="noopener">WorldMiner ↗</a>
       <a href="https://sepolia.basescan.org/address/0xf9b86b69655ed3f7be022ceb54cec7082e67383c" target="_blank" rel="noopener">WorldToken ↗</a>
@@ -323,29 +358,36 @@
 const RPC = 'https://sepolia.base.org'
 const MINER = '0xb9b9d6f22280bf2b74855e7da1ad7d85c1bd5fdb'
 const TOKEN = '0xf9b86b69655ed3f7be022ceb54cec7082e67383c'
-const POOL  = '0xe1f4BBe734aeD192CCe313585fFBbEB6B64e90c5'
+const POOL  = '0xe1f4bbe734aed192cce313585ffbbeb6b64e90c5'
 const WETH  = '0x4200000000000000000000000000000000000006'
 const STAKING = '0x42dc972d601a1392fe1969de7fade9c44322beb9'
 const DEPLOY_TS = 1775740056
 const DEPLOY_BLOCK = 39985884
 const DEPLOY_PRICE = 1.857e-7
+const DEPLOY_WETH = 0.195
+const DEPLOY_WORLD = 1050000
 const ETH_USD = 2000
 const MAX_SUPPLY = 19950000
 const REFRESH_MS = 30000
+const HOLDER_REFUND = 0.85
+const STAKING_FEE_FRACTION = 0.02 // 2% of glaze price goes to staking
+const GAS_PER_TX = 0.00000094 // ETH per tx (measured)
 
-// Function selectors (computed via cast sig)
+const CONTINENT_NAMES = ['Asia', 'Africa', 'Americas', 'Europe', 'Oceania']
+
+// Function selectors
 const SEL = {
   balanceOf: '0x70a08231',
   getProtocolStats: '0x771aceef',
   totalStaked: '0x817b1cd2',
   rewardPerTokenStored: '0xdf136d65',
   getContinentInfo: '0x898b1021',
+  token0: '0x0dfe1681',
 }
 
-// 5 continents — used to query holder + lastPrice for the locked-ETH column
-const CONTINENT_NAMES = ['Asia', 'Africa', 'Americas', 'Europe', 'Oceania']
-// Holder gets 85% back when outbid
-const HOLDER_REFUND = 0.85
+// Event topic hashes
+const TOPIC_GLAZE = '0xe012aff215c01cc9690123113c09287f9d62bf9e543970d9371e3247cecdd734'
+const TOPIC_SWAP  = '0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67'
 
 const BOT_WALLETS = [
   { name: 'W0', continent: 'Asia',     addr: '0x9943eCf1C370Cb492c5c6Ab8A2bbFfC76A7c9704', funded: 0.026 },
@@ -359,6 +401,18 @@ const BOT_WALLETS = [
   { name: 'W8', continent: 'Oceania',  addr: '0x5eD31B88001B40664C76fE5F448C888ae1119a74', funded: 0.009 },
   { name: 'W9', continent: 'Oceania',  addr: '0x6cbf2D103018Ba4a3202Bd9143672f86D268F766', funded: 0.009 },
 ]
+const BOT_ADDR_SET = new Set(BOT_WALLETS.map(b => b.addr.toLowerCase()))
+const BOT_BY_ADDR = Object.fromEntries(BOT_WALLETS.map(b => [b.addr.toLowerCase(), b]))
+
+// ─── State / caches ───────────────────────────────────────────────────────
+let token0IsWorld = null
+let glazeCache = []         // {continentId, newHolder, prevHolder, price (BigInt), prevPayout (BigInt), block, ts}
+let glazeCacheLastBlock = DEPLOY_BLOCK - 1
+let swapCache = []          // {block, ts, sqrtPriceX96 (BigInt), priceETH (number)}
+let swapCacheLastBlock = DEPLOY_BLOCK - 1
+const blockTsCache = {}     // blockNumber -> unix timestamp
+let lastTokenPrice = DEPLOY_PRICE
+let activeTimeframe = 'ALL'
 
 // ─── RPC helpers ──────────────────────────────────────────────────────────
 let rpcId = 1
@@ -369,36 +423,21 @@ async function rpc(method, params) {
     body: JSON.stringify({ jsonrpc: '2.0', id: rpcId++, method, params })
   })
   const json = await r.json()
-  if (json.error) throw new Error(json.error.message)
+  if (json.error) throw new Error(json.error.message + ' (' + method + ')')
   return json.result
 }
 
-function padAddress(addr) {
-  return '000000000000000000000000' + addr.toLowerCase().replace(/^0x/, '')
-}
+function padAddress(addr) { return '000000000000000000000000' + addr.toLowerCase().replace(/^0x/, '') }
+const ethCall = (to, data) => rpc('eth_call', [{ to, data }, 'latest'])
 
-async function ethCall(to, data) {
-  return rpc('eth_call', [{ to, data }, 'latest'])
-}
-
-async function getBalance(addr) {
-  const hex = await rpc('eth_getBalance', [addr, 'latest'])
-  return BigInt(hex)
-}
-
-async function getBlockNumber() {
-  return parseInt(await rpc('eth_blockNumber', []), 16)
-}
+async function getBalance(addr) { return BigInt(await rpc('eth_getBalance', [addr, 'latest'])) }
+async function getBlockNumber() { return parseInt(await rpc('eth_blockNumber', []), 16) }
 
 async function balanceOf(token, holder) {
-  const data = SEL.balanceOf + padAddress(holder)
-  const result = await ethCall(token, data)
-  return BigInt(result)
+  return BigInt(await ethCall(token, SEL.balanceOf + padAddress(holder)))
 }
-
 async function getProtocolStats() {
   const result = await ethCall(MINER, SEL.getProtocolStats)
-  // returns 4 uint256s
   const hex = result.replace(/^0x/, '')
   return [
     BigInt('0x' + hex.slice(0, 64)),
@@ -407,31 +446,145 @@ async function getProtocolStats() {
     BigInt('0x' + hex.slice(192, 256)),
   ]
 }
-
-async function getTotalStaked() {
-  const result = await ethCall(STAKING, SEL.totalStaked)
-  return BigInt(result)
+async function getTotalStaked() { return BigInt(await ethCall(STAKING, SEL.totalStaked)) }
+async function getRewardPerToken() { return BigInt(await ethCall(STAKING, SEL.rewardPerTokenStored)) }
+async function getToken0(pool) {
+  const r = await ethCall(pool, SEL.token0)
+  return ('0x' + r.slice(26)).toLowerCase()
 }
 
-async function getRewardPerToken() {
-  const result = await ethCall(STAKING, SEL.rewardPerTokenStored)
-  return BigInt(result)
-}
-
-// getContinentInfo(uint8) returns (string,address,uint256,uint256,uint256,uint256,uint256)
-// We only need holder + lastPrice, both at fixed offsets in the encoded result.
-// Layout (post 0x): word 0 = string offset, word 1 = holder, word 2 = currentPrice,
-// word 3 = effectiveRate, word 4 = lastPrice, word 5 = secsRemaining, word 6 = holderUnrefined
 async function getContinentInfo(continentId) {
   const idHex = continentId.toString(16).padStart(64, '0')
-  const data = SEL.getContinentInfo + idHex
-  const result = await ethCall(MINER, data)
+  const result = await ethCall(MINER, SEL.getContinentInfo + idHex)
   const hex = result.replace(/^0x/, '')
   const word = (i) => hex.slice(i * 64, (i + 1) * 64)
-  // Word 1: address padded — last 40 hex chars
-  const holder = '0x' + word(1).slice(24)
+  const holder = ('0x' + word(1).slice(24)).toLowerCase()
   const lastPrice = BigInt('0x' + word(4))
-  return { holder: holder.toLowerCase(), lastPrice }
+  return { holder, lastPrice }
+}
+
+// Chunked log fetcher (Base Sepolia public RPC caps eth_getLogs windows)
+async function fetchLogsChunked(filter, fromBlock, toBlock, chunkSize = 5000) {
+  const logs = []
+  let from = fromBlock
+  while (from <= toBlock) {
+    const to = Math.min(from + chunkSize, toBlock)
+    try {
+      const r = await rpc('eth_getLogs', [{
+        ...filter,
+        fromBlock: '0x' + from.toString(16),
+        toBlock: '0x' + to.toString(16),
+      }])
+      logs.push(...r)
+    } catch (e) {
+      // shrink chunk on failure
+      if (chunkSize > 500) {
+        const subLogs = await fetchLogsChunked(filter, from, to, Math.floor(chunkSize / 2))
+        logs.push(...subLogs)
+      } else {
+        console.error('log fetch failed', e)
+      }
+    }
+    from = to + 1
+  }
+  return logs
+}
+
+async function getBlockTimestamp(blockNum) {
+  if (blockTsCache[blockNum]) return blockTsCache[blockNum]
+  const b = await rpc('eth_getBlockByNumber', ['0x' + blockNum.toString(16), false])
+  const ts = parseInt(b.timestamp, 16)
+  blockTsCache[blockNum] = ts
+  return ts
+}
+
+async function fillBlockTimestamps(blockNums) {
+  const missing = [...new Set(blockNums)].filter(b => !blockTsCache[b])
+  if (missing.length === 0) return
+  // Fetch in batches of 10 in parallel
+  for (let i = 0; i < missing.length; i += 10) {
+    const slice = missing.slice(i, i + 10)
+    await Promise.all(slice.map(getBlockTimestamp))
+  }
+}
+
+// ─── Event decoders ───────────────────────────────────────────────────────
+function decodeGlazeLog(log) {
+  // topics: [topic0, continentId, newHolder, prevHolder]
+  // data: price (uint256) + prevPayout (uint256) + tokensAccrued (uint256)
+  const continentId = parseInt(log.topics[1], 16)
+  const newHolder = ('0x' + log.topics[2].slice(26)).toLowerCase()
+  const prevHolder = ('0x' + log.topics[3].slice(26)).toLowerCase()
+  const data = log.data.replace(/^0x/, '')
+  const price = BigInt('0x' + data.slice(0, 64))
+  const prevPayout = BigInt('0x' + data.slice(64, 128))
+  const tokensAccrued = BigInt('0x' + data.slice(128, 192))
+  return {
+    continentId, newHolder, prevHolder,
+    price, prevPayout, tokensAccrued,
+    block: parseInt(log.blockNumber, 16),
+    txHash: log.transactionHash,
+  }
+}
+
+function decodeSwapLog(log) {
+  // data: amount0 (int256) + amount1 (int256) + sqrtPriceX96 (uint160) + liquidity (uint128) + tick (int24)
+  const data = log.data.replace(/^0x/, '')
+  const sqrtPriceX96 = BigInt('0x' + data.slice(128, 192))
+  return {
+    block: parseInt(log.blockNumber, 16),
+    sqrtPriceX96,
+    txHash: log.transactionHash,
+  }
+}
+
+function priceFromSqrt(sqrtPriceX96, t0IsWorld) {
+  const sq = Number(sqrtPriceX96) / Math.pow(2, 96)
+  const ratio = sq * sq
+  // ratio = token1 / token0
+  // We want price = ETH per WORLD
+  // If token0 = WETH, ratio = WORLD/WETH → ETH/WORLD = 1/ratio
+  // If token0 = WORLD, ratio = WETH/WORLD → ETH/WORLD = ratio
+  return t0IsWorld ? ratio : 1 / ratio
+}
+
+// ─── Cache fetchers ───────────────────────────────────────────────────────
+async function refreshGlazeCache(currentBlock) {
+  const fromBlock = glazeCacheLastBlock + 1
+  if (fromBlock > currentBlock) return
+  const logs = await fetchLogsChunked({
+    address: MINER,
+    topics: [TOPIC_GLAZE],
+  }, fromBlock, currentBlock)
+  const decoded = logs.map(decodeGlazeLog)
+  // Need timestamps for new blocks
+  await fillBlockTimestamps(decoded.map(d => d.block))
+  decoded.forEach(d => { d.ts = blockTsCache[d.block] })
+  glazeCache.push(...decoded)
+  glazeCache.sort((a, b) => a.block - b.block)
+  glazeCacheLastBlock = currentBlock
+}
+
+async function refreshSwapCache(currentBlock) {
+  if (token0IsWorld === null) {
+    const t0 = await getToken0(POOL)
+    token0IsWorld = (t0 === TOKEN.toLowerCase())
+  }
+  const fromBlock = swapCacheLastBlock + 1
+  if (fromBlock > currentBlock) return
+  const logs = await fetchLogsChunked({
+    address: POOL,
+    topics: [TOPIC_SWAP],
+  }, fromBlock, currentBlock)
+  const decoded = logs.map(decodeSwapLog)
+  await fillBlockTimestamps(decoded.map(d => d.block))
+  decoded.forEach(d => {
+    d.ts = blockTsCache[d.block]
+    d.priceETH = priceFromSqrt(d.sqrtPriceX96, token0IsWorld)
+  })
+  swapCache.push(...decoded)
+  swapCache.sort((a, b) => a.block - b.block)
+  swapCacheLastBlock = currentBlock
 }
 
 // ─── Formatters ───────────────────────────────────────────────────────────
@@ -461,81 +614,53 @@ function fmtUSD(n) {
   if (n === 0) return '$0.00'
   if (Math.abs(n) >= 1_000_000) return '$' + (n / 1_000_000).toFixed(2) + 'M'
   if (Math.abs(n) >= 1_000) return '$' + (n / 1_000).toFixed(2) + 'K'
-  if (Math.abs(n) < 0.01) return '<$0.01'
+  if (Math.abs(n) < 0.0001) return '<$0.0001'
+  if (Math.abs(n) < 0.01) return '$' + n.toFixed(5)
   return '$' + n.toFixed(2)
 }
 
-function fmtETH(n) {
+function fmtETH(n, decimals = 6) {
   if (!isFinite(n) || n === 0) return '0'
   if (Math.abs(n) < 0.0001) return n.toExponential(3)
-  return n.toFixed(6)
+  return n.toFixed(decimals)
 }
 
-function shortAddr(a) {
-  return a.slice(0, 6) + '…' + a.slice(-4)
+function fmtDuration(seconds) {
+  if (!isFinite(seconds) || seconds === 0) return '—'
+  if (seconds < 60) return seconds.toFixed(0) + 's'
+  if (seconds < 3600) return (seconds / 60).toFixed(1) + 'm'
+  return (seconds / 3600).toFixed(1) + 'h'
 }
+
+function shortAddr(a) { return a.slice(0, 6) + '…' + a.slice(-4) }
 
 // ─── Charts ───────────────────────────────────────────────────────────────
-// Lazy-init: created on first refresh() so we can guard against the
-// chartjs-adapter-date-fns dependency (we use the linear scale instead of
-// time scale to avoid loading any adapter).
-let feeChart = null
 let priceChart = null
-const priceData = [] // {x:ms, y:price}; seeded on first refresh
-
-function initFeeChart() {
-  feeChart = new Chart(document.getElementById('fee-chart').getContext('2d'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Previous holder', 'LP', 'Stakers', 'Team'],
-      datasets: [{
-        data: [85, 12, 2, 1],
-        backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7'],
-        borderColor: '#0a0a0a',
-        borderWidth: 2,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '70%',
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: { color: '#aaa', font: { size: 11, family: 'Inter' }, padding: 12, boxWidth: 12 }
-        },
-        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}%` } },
-      },
-    },
-  })
-}
 
 function initPriceChart() {
   priceChart = new Chart(document.getElementById('price-chart').getContext('2d'), {
     type: 'line',
-    data: {
-      datasets: [{
-        label: 'ETH/WORLD',
-        data: priceData,
-        borderColor: '#22c55e',
-        backgroundColor: 'rgba(34,197,94,0.12)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.3,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-      }]
-    },
+    data: { datasets: [{
+      label: 'WORLD/USD',
+      data: [],
+      borderColor: '#22c55e',
+      backgroundColor: 'rgba(34,197,94,0.12)',
+      borderWidth: 2,
+      fill: true,
+      tension: 0.25,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+    }]},
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      parsing: false, // x is already numeric, y already numeric
+      parsing: false,
       plugins: {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            title: (items) => new Date(items[0].parsed.x).toLocaleTimeString(),
-            label: (ctx) => ctx.parsed.y.toExponential(4) + ' ETH',
+            title: (items) => new Date(items[0].parsed.x).toLocaleString(),
+            label: (ctx) => '$' + ctx.parsed.y.toFixed(8),
           },
         },
       },
@@ -545,9 +670,13 @@ function initPriceChart() {
           grid: { color: 'rgba(255,255,255,0.04)' },
           ticks: {
             color: '#666', font: { size: 10 },
+            maxTicksLimit: 8,
             callback: (v) => {
+              const d = new Date(v)
               const minsAgo = Math.round((Date.now() - v) / 60000)
-              return minsAgo === 0 ? 'now' : '-' + minsAgo + 'm'
+              if (minsAgo < 60) return '-' + minsAgo + 'm'
+              if (minsAgo < 1440) return '-' + Math.round(minsAgo / 60) + 'h'
+              return '-' + Math.round(minsAgo / 1440) + 'd'
             },
           },
         },
@@ -555,7 +684,7 @@ function initPriceChart() {
           grid: { color: 'rgba(255,255,255,0.04)' },
           ticks: {
             color: '#666', font: { size: 10 },
-            callback: (v) => Number(v).toExponential(1),
+            callback: (v) => '$' + Number(v).toFixed(6),
           },
         },
       },
@@ -563,12 +692,44 @@ function initPriceChart() {
   })
 }
 
-// ─── Render functions ─────────────────────────────────────────────────────
-function setText(id, text) {
-  const el = document.getElementById(id)
-  if (el) { el.textContent = text; el.classList.remove('skeleton') }
+function timeframeToSeconds(tf) {
+  switch (tf) {
+    case '1H': return 3600
+    case '4H': return 4 * 3600
+    case '12H': return 12 * 3600
+    case '24H': return 24 * 3600
+    case 'ALL': return Infinity
+    default: return Infinity
+  }
 }
 
+function updatePriceChart() {
+  if (!priceChart) return
+  const cutoffSec = timeframeToSeconds(activeTimeframe)
+  const nowSec = Date.now() / 1000
+  const filtered = swapCache.filter(s => (nowSec - s.ts) <= cutoffSec)
+  const points = filtered.map(s => ({ x: s.ts * 1000, y: s.priceETH * ETH_USD }))
+  // Always append the current price as the last point
+  if (lastTokenPrice) {
+    points.push({ x: Date.now(), y: lastTokenPrice * ETH_USD })
+  }
+  // Fallback: if no swaps in window, show deploy + current
+  if (points.length < 2) {
+    points.unshift({ x: DEPLOY_TS * 1000, y: DEPLOY_PRICE * ETH_USD })
+  }
+  priceChart.data.datasets[0].data = points
+  priceChart.update('none')
+}
+
+// ─── DOM helpers ──────────────────────────────────────────────────────────
+function setText(id, text) {
+  const el = document.getElementById(id)
+  if (el) el.textContent = text
+}
+function setHTML(id, html) {
+  const el = document.getElementById(id)
+  if (el) el.innerHTML = html
+}
 function setColor(id, cls) {
   const el = document.getElementById(id)
   if (!el) return
@@ -576,23 +737,191 @@ function setColor(id, cls) {
   if (cls) el.classList.add(cls)
 }
 
-// Lazy-init charts on first refresh so DOM exists and Chart constructor never crashes module load
-function ensureCharts() {
-  if (!feeChart) initFeeChart()
-  if (!priceChart) initPriceChart()
+// ─── Derived metrics from glaze cache ─────────────────────────────────────
+function computeContinentMetrics() {
+  const out = []
+  for (let cId = 0; cId < 5; cId++) {
+    const events = glazeCache.filter(e => e.continentId === cId)
+    if (events.length === 0) {
+      out.push({ id: cId, totalGlazes: 0, avgHoldSec: 0, avgEntryDecayPct: 0, avgPrice: 0, totalVolume: 0 })
+      continue
+    }
+    let totalVolume = 0n
+    let totalPrice = 0n
+    for (const e of events) {
+      totalVolume += e.price
+      totalPrice += e.price
+    }
+    // Hold times: difference between consecutive events
+    const holds = []
+    for (let i = 1; i < events.length; i++) {
+      const dt = events[i].ts - events[i - 1].ts
+      if (dt > 0) holds.push(dt)
+    }
+    const avgHoldSec = holds.length > 0 ? holds.reduce((a, b) => a + b, 0) / holds.length : 0
+
+    // Entry decay %: For each glaze (except first/genesis), startingPrice = 2 × prevPrice
+    // decay% at entry = 1 - (entryPrice / startingPrice), then × 100
+    const decays = []
+    for (let i = 1; i < events.length; i++) {
+      const prevPrice = Number(events[i - 1].price)
+      const entryPrice = Number(events[i].price)
+      const startingPrice = prevPrice * 2
+      if (startingPrice > 0 && entryPrice <= startingPrice) {
+        decays.push((1 - entryPrice / startingPrice) * 100)
+      }
+    }
+    const avgEntryDecayPct = decays.length > 0 ? decays.reduce((a, b) => a + b, 0) / decays.length : 0
+
+    out.push({
+      id: cId,
+      totalGlazes: events.length,
+      avgHoldSec,
+      avgEntryDecayPct,
+      avgPrice: fmtWei(totalPrice / BigInt(events.length)),
+      totalVolume: fmtWei(totalVolume),
+    })
+  }
+  return out
 }
 
-async function refresh() {
-  ensureCharts()
+function computeBotPerformance() {
+  // Per bot wallet, count their cycles + sum ETH in/out
+  const stats = {}
+  BOT_WALLETS.forEach(b => {
+    stats[b.addr.toLowerCase()] = {
+      bot: b,
+      cycles: 0,           // times this bot was newHolder
+      ethInWei: 0n,        // sum of price they paid
+      ethOutWei: 0n,       // sum of prevPayout they received
+      holdTimes: [],       // durations they held a continent
+      txEstimate: 0,       // approx txs (cycles × 3)
+    }
+  })
 
-  // ── Uptime (no RPC) ──
+  // First pass: count cycles + ETH in/out
+  for (const e of glazeCache) {
+    if (BOT_ADDR_SET.has(e.newHolder)) {
+      stats[e.newHolder].cycles++
+      stats[e.newHolder].ethInWei += e.price
+    }
+    if (e.prevHolder !== '0x0000000000000000000000000000000000000000' && BOT_ADDR_SET.has(e.prevHolder)) {
+      stats[e.prevHolder].ethOutWei += e.prevPayout
+    }
+  }
+
+  // Hold-time computation: for each glaze N at continent C, find next glaze on C → duration
+  for (let i = 0; i < glazeCache.length; i++) {
+    const cur = glazeCache[i]
+    if (!BOT_ADDR_SET.has(cur.newHolder)) continue
+    // Find next glaze on the same continent
+    for (let j = i + 1; j < glazeCache.length; j++) {
+      if (glazeCache[j].continentId === cur.continentId) {
+        const dt = glazeCache[j].ts - cur.ts
+        if (dt > 0) stats[cur.newHolder].holdTimes.push(dt)
+        break
+      }
+    }
+  }
+
+  // Build result rows
+  return BOT_WALLETS.map(b => {
+    const s = stats[b.addr.toLowerCase()]
+    const cycles = s.cycles
+    const ethIn = fmtWei(s.ethInWei)
+    const ethOut = fmtWei(s.ethOutWei)
+    // Estimate txs: 1 glaze + 1 refine + 1 sell per successful cycle + ~2 retries on average
+    const txEstimate = cycles * 5
+    const gasEst = txEstimate * GAS_PER_TX
+    const avgHold = s.holdTimes.length > 0
+      ? s.holdTimes.reduce((a, c) => a + c, 0) / s.holdTimes.length
+      : 0
+    const pnl = ethOut - ethIn - gasEst
+    return { bot: b, cycles, avgHoldMin: avgHold / 60, ethIn, ethOut, gasEst, pnl }
+  })
+}
+
+// ─── Render functions ─────────────────────────────────────────────────────
+function renderContinentTable() {
+  const metrics = computeContinentMetrics()
+  const tbody = document.getElementById('continents-tbody')
+  tbody.innerHTML = ''
+  metrics.forEach(m => {
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td><strong>${CONTINENT_NAMES[m.id]}</strong></td>
+      <td class="right mono">${m.totalGlazes}</td>
+      <td class="right mono">${fmtDuration(m.avgHoldSec)}</td>
+      <td class="right mono">${m.avgEntryDecayPct > 0 ? m.avgEntryDecayPct.toFixed(1) + '%' : '—'}</td>
+      <td class="right mono">${fmtETH(m.avgPrice, 5)}</td>
+      <td class="right mono">${fmtETH(m.totalVolume, 4)}</td>
+    `
+    tbody.appendChild(tr)
+  })
+}
+
+function renderBotPerformanceTable() {
+  const rows = computeBotPerformance()
+  const tbody = document.getElementById('bot-perf-tbody')
+  tbody.innerHTML = ''
+  rows.forEach(r => {
+    const pnlColor = r.pnl >= 0 ? '#22c55e' : '#ef4444'
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td><strong>${r.bot.name}</strong></td>
+      <td>${r.bot.continent}</td>
+      <td class="right mono">${r.cycles}</td>
+      <td class="right mono">${r.avgHoldMin > 0 ? r.avgHoldMin.toFixed(1) : '—'}</td>
+      <td class="right mono">${fmtETH(r.ethIn, 5)}</td>
+      <td class="right mono">${fmtETH(r.ethOut, 5)}</td>
+      <td class="right mono" style="color:#888">${fmtETH(r.gasEst, 5)}</td>
+      <td class="right mono" style="color:${pnlColor}">${r.pnl >= 0 ? '+' : ''}${fmtETH(r.pnl, 5)}</td>
+    `
+    tbody.appendChild(tr)
+  })
+}
+
+function renderProtocolOverviewFromGlazes() {
+  const total = glazeCache.length
+  const totalVolWei = glazeCache.reduce((acc, e) => acc + e.price, 0n)
+  const totalVol = fmtWei(totalVolWei)
+  let botCount = 0
+  let humanCount = 0
+  for (const e of glazeCache) {
+    if (BOT_ADDR_SET.has(e.newHolder)) botCount++
+    else humanCount++
+  }
+  const botPct = total > 0 ? (botCount / total) * 100 : 0
+  setText('total-glazes', total.toString())
+  const uptimeHours = Math.max(0.001, (Date.now() / 1000 - DEPLOY_TS) / 3600)
+  setText('glazes-rate', (total / uptimeHours).toFixed(1) + ' / hour')
+  setText('eth-volume', fmtETH(totalVol, 4) + ' ETH')
+  setText('eth-volume-usd', fmtUSD(totalVol * ETH_USD))
+  setText('bot-pct', botPct.toFixed(1) + '%')
+  setText('bot-vs-human', botCount + ' bot · ' + humanCount + ' human')
+
+  // Total ETH distributed estimate (2% staking fee × cycles after genesis)
+  let stakingFlow = 0
+  for (const e of glazeCache) {
+    if (e.prevHolder !== '0x0000000000000000000000000000000000000000') {
+      stakingFlow += fmtWei(e.price) * STAKING_FEE_FRACTION
+    }
+  }
+  setText('total-distributed', fmtETH(stakingFlow, 5) + ' ETH')
+  setText('total-distributed-sub', fmtUSD(stakingFlow * ETH_USD) + ' · est')
+}
+
+// ─── Refresh — two phases ─────────────────────────────────────────────────
+async function refresh() {
+  if (!priceChart) initPriceChart()
+
+  // Uptime ticker (no RPC)
   const now = Math.floor(Date.now() / 1000)
   const uptimeSec = now - DEPLOY_TS
   setText('uptime', fmtUptime(uptimeSec))
   setText('deploy-date', new Date(DEPLOY_TS * 1000).toUTCString().slice(5, 22) + ' UTC')
 
-  // ── PHASE 1: core data (block + protocol + pool) ──
-  // Renders immediately so the user sees the price/mcap update fast
+  // ─── Phase 1: core RPC (block + protocol stats + pool reserves) ───
   let blockNum, stats, wethReserve, worldReserve, tokenPrice
   try {
     [blockNum, stats, wethReserve, worldReserve] = await Promise.all([
@@ -602,60 +931,59 @@ async function refresh() {
       balanceOf(TOKEN, POOL),
     ])
   } catch (e) {
-    console.error('Phase 1 RPC error:', e)
+    console.error('Phase 1 error:', e)
     return
   }
 
-  // Blocks elapsed
-  setText('blocks', fmtNum(blockNum - DEPLOY_BLOCK, 0))
-
-  // Glaze events estimate (crude proxy: 51 glazes / 10k blocks observed)
-  const blocksElapsed = blockNum - DEPLOY_BLOCK
-  const estGlazes = Math.round(blocksElapsed * 51 / 10000)
-  setText('glazes', fmtNum(estGlazes, 0))
-
-  // Protocol stats: [totalMinted, maxMineable, currentEpoch, totalUnrefined]
-  const totalMinted = fmtWei(stats[0])
-  const totalUnrefined = fmtWei(stats[3])
-  setText('minted', fmtNum(totalMinted))
-  setText('minted-pct', ((totalMinted / MAX_SUPPLY) * 100).toFixed(2) + '% of max')
-
-  // Pool reserves + token price
+  // Pool + price (header)
   const wethR = fmtWei(wethReserve)
   const worldR = fmtWei(worldReserve)
   tokenPrice = wethR / worldR
-  setText('weth-reserve', fmtETH(wethR) + ' ETH')
+  lastTokenPrice = tokenPrice
+  const tokenPriceUsd = tokenPrice * ETH_USD
+  setText('header-price', '$' + tokenPriceUsd.toFixed(8))
+  const priceChange = ((tokenPrice / DEPLOY_PRICE) - 1) * 100
+  const sign = priceChange >= 0 ? '+' : ''
+  const headerChangeEl = document.getElementById('header-price-change')
+  headerChangeEl.textContent = sign + priceChange.toFixed(2) + '% since deploy'
+  headerChangeEl.style.color = priceChange >= 0 ? 'var(--green)' : 'var(--red)'
+
+  setText('weth-reserve', fmtETH(wethR, 5) + ' ETH')
   setText('weth-reserve-usd', fmtUSD(wethR * ETH_USD))
   setText('world-reserve', fmtNum(worldR))
   setText('world-reserve-usd', fmtUSD(worldR * tokenPrice * ETH_USD))
 
-  // Token price card
-  setText('price', tokenPrice.toExponential(4) + ' ETH')
-  setText('price-usd', fmtUSD(tokenPrice * ETH_USD))
-  const priceChange = ((tokenPrice / DEPLOY_PRICE) - 1) * 100
-  const sign = priceChange >= 0 ? '+' : ''
-  setText('price-change', sign + priceChange.toFixed(2) + '%')
-  setColor('price-change', priceChange >= 0 ? 'green' : 'red')
+  // Fee revenue accumulated = current WETH - initial WETH
+  const feeRevenue = wethR - DEPLOY_WETH
+  setText('fee-revenue', (feeRevenue >= 0 ? '+' : '') + fmtETH(feeRevenue, 6) + ' ETH')
+  setText('fee-revenue-sub', fmtUSD(feeRevenue * ETH_USD) + ' · since deploy')
 
-  // Mining cards (depend on tokenPrice)
+  // Net WORLD sold to pool = current - initial (positive = sells > buys)
+  const worldSold = worldR - DEPLOY_WORLD
+  setText('world-sold', (worldSold >= 0 ? '+' : '') + fmtNum(worldSold))
+  setText('world-sold-sub', fmtUSD(worldSold * tokenPrice * ETH_USD) + ' · into pool')
+
+  // Mining
+  const totalMinted = fmtWei(stats[0])
+  const totalUnrefined = fmtWei(stats[3])
   setText('mining-minted', fmtNum(totalMinted) + ' WORLD')
-  setText('mining-minted-usd', fmtUSD(totalMinted * tokenPrice * ETH_USD))
+  setText('mining-minted-pct', ((totalMinted / MAX_SUPPLY) * 100).toFixed(2) + '% of max')
   const hoursElapsed = uptimeSec / 3600
-  const rate = hoursElapsed > 0 ? totalMinted / hoursElapsed : 0
-  setText('mining-rate', fmtNum(rate) + ' /h')
+  setText('mining-rate', fmtNum(totalMinted / Math.max(0.001, hoursElapsed)) + ' /h')
   setText('unrefined', fmtNum(totalUnrefined) + ' WORLD')
   setText('unrefined-usd', fmtUSD(totalUnrefined * tokenPrice * ETH_USD))
 
-  // Push to price chart immediately
-  priceData.push({ x: Date.now(), y: tokenPrice })
-  if (priceData.length > 200) priceData.shift()
-  priceChart.update('none')
+  // Update price chart with current price (already in cache loop below)
+  updatePriceChart()
 
-  // ── PHASE 2: staking + bot wallets + continents ──
-  // Heavier — kicks off after phase 1 has rendered
+  // ─── Phase 2: events + staking + bots in parallel ───
   let totalStaked, rewardPerToken, stakingEth, botBalances, continents
   try {
-    [totalStaked, rewardPerToken, stakingEth, botBalances, continents] = await Promise.all([
+    await Promise.all([
+      refreshGlazeCache(blockNum),
+      refreshSwapCache(blockNum),
+    ])
+    ;[totalStaked, rewardPerToken, stakingEth, botBalances, continents] = await Promise.all([
       getTotalStaked(),
       getRewardPerToken(),
       getBalance(STAKING),
@@ -663,30 +991,36 @@ async function refresh() {
       Promise.all([0, 1, 2, 3, 4].map(id => getContinentInfo(id))),
     ])
   } catch (e) {
-    console.error('Phase 2 RPC error:', e)
+    console.error('Phase 2 error:', e)
     return
   }
+
+  // Render protocol overview from event cache
+  renderProtocolOverviewFromGlazes()
+
+  // Per-continent + bot performance tables
+  renderContinentTable()
+  renderBotPerformanceTable()
+
+  // Update price chart with latest swap data
+  updatePriceChart()
 
   // Staking
   const totalStakedNum = fmtWei(totalStaked)
   setText('total-staked', fmtNum(totalStakedNum) + ' WORLD')
   setText('total-staked-usd', fmtUSD(totalStakedNum * tokenPrice * ETH_USD))
   const stakingEthNum = fmtWei(stakingEth)
-  setText('staking-eth', fmtETH(stakingEthNum) + ' ETH')
+  setText('staking-eth', fmtETH(stakingEthNum, 6) + ' ETH')
   setText('staking-eth-usd', fmtUSD(stakingEthNum * ETH_USD))
   setText('reward-per-token', Number(rewardPerToken).toExponential(3))
 
-  // Map: bot address (lower) → lastPrice locked in continent (BigInt wei)
-  // lastPrice is what the holder PAID to enter; on outbid they receive ~85% back.
+  // Bot wallets table — locked + adjusted
   const lockedByBot = {}
   continents.forEach(c => {
     if (c.holder !== '0x0000000000000000000000000000000000000000') {
       lockedByBot[c.holder] = c.lastPrice
     }
   })
-
-  // Bot wallets table — locked column shows the lastPrice paid for the held
-  // continent; adjusted balance = current + locked × 0.85 (holder refund cut)
   const tbody = document.getElementById('bots-tbody')
   tbody.innerHTML = ''
   BOT_WALLETS.forEach((b, i) => {
@@ -719,26 +1053,32 @@ async function refresh() {
   })
 }
 
+// ─── Timeframe button handler ─────────────────────────────────────────────
+document.querySelectorAll('#tf-buttons button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#tf-buttons button').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    activeTimeframe = btn.getAttribute('data-tf')
+    updatePriceChart()
+  })
+})
+
 // ─── Auto-refresh ─────────────────────────────────────────────────────────
 let countdown = 30
 const countdownEl = document.getElementById('countdown')
-
 setInterval(() => {
   countdown -= 1
   if (countdown <= 0) countdown = 30
   countdownEl.textContent = countdown
 }, 1000)
-
 setInterval(() => {
   refresh().catch(e => console.error(e))
   countdown = 30
 }, REFRESH_MS)
-
-// Live uptime ticker every second
 setInterval(() => {
   const now = Math.floor(Date.now() / 1000)
   const el = document.getElementById('uptime')
-  if (el && !el.classList.contains('skeleton')) {
+  if (el && el.textContent !== '—') {
     el.textContent = fmtUptime(now - DEPLOY_TS)
   }
 }, 1000)
