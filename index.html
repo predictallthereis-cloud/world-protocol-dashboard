@@ -402,6 +402,23 @@
       </div>
     </div>
 
+    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Fee Distribution Summary</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Flow</th>
+            <th>Recipient</th>
+            <th class="right">Rate</th>
+            <th class="right">Est. Total (from events)</th>
+            <th class="right">On-chain Balance Now</th>
+            <th class="right">Match</th>
+          </tr>
+        </thead>
+        <tbody id="fee-dist-tbody"></tbody>
+      </table>
+    </div>
+
     <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Dev / Team Position</h3>
     <div class="grid grid-4">
       <div class="card">
@@ -1197,6 +1214,98 @@ function renderTokenFeeAnalytics(args) {
   setText('tfa-glaze-dev-usd', fmtUSD(glazeDev * ETH_USD))
   setText('tfa-glaze-total', fmtETH(glazeFeesTotal, 5) + ' ETH')
   setText('tfa-glaze-total-usd', fmtUSD(glazeFeesTotal * ETH_USD))
+
+  // ── Fee Distribution Summary table ──
+  const stakingEthNumForTable = fmtWei(BigInt(stakingEth || 0n))
+  const devStakedWorldForTable = fmtWei(BigInt(devStaked || 0n))
+
+  // LP reconciliation: routed should equal (current + used)
+  const lpReceivedTotal = lpCurrentEth + lpUsedEth
+  const lpDelta = Math.abs(glazeLP - lpReceivedTotal)
+  const lpMatchOk = lpDelta < 0.001
+
+  // Staking reconciliation: routed should equal what's currently in the staking contract
+  // (staking distributes via accumulator, no withdraw possible — total ever sent ≈ balance)
+  const stakingDelta = Math.abs(glazeStaking - stakingEthNumForTable)
+  const stakingMatchOk = stakingDelta < 0.0005
+
+  const okBadge = '<span style="color:var(--green);font-weight:600">✓ matched</span>'
+  const warnBadge = (delta) => '<span style="color:var(--amber);font-weight:600">⚠ Δ ' + delta.toFixed(5) + '</span>'
+  const orphanBadge = '<span style="color:var(--amber);font-weight:600">⚠ ORPHANED</span>'
+  const dash = '<span style="color:#666">—</span>'
+
+  const fdRows = [
+    {
+      flow: 'Glaze → LP',
+      recipient: 'lpWallet',
+      rate: '12%',
+      est: fmtETH(glazeLP, 5) + ' ETH',
+      onchain: fmtETH(lpReceivedTotal, 5) + ' ETH',
+      match: lpMatchOk ? okBadge : warnBadge(lpDelta),
+    },
+    {
+      flow: 'Glaze → Staking',
+      recipient: 'staking contract',
+      rate: '2%',
+      est: fmtETH(glazeStaking, 5) + ' ETH',
+      onchain: fmtETH(stakingEthNumForTable, 5) + ' ETH',
+      match: stakingMatchOk ? okBadge : warnBadge(stakingDelta),
+    },
+    {
+      flow: 'Glaze → Dev',
+      recipient: 'devWallet',
+      rate: '1%',
+      est: fmtETH(glazeDev, 5) + ' ETH',
+      onchain: dash,
+      match: dash,
+    },
+    {
+      flow: 'Refine → Base',
+      recipient: 'unrefined holders',
+      rate: '6.3%',
+      est: fmtNum(taxBase) + ' WORLD',
+      onchain: dash,
+      match: dash,
+    },
+    {
+      flow: 'Refine → 7d Tier',
+      recipient: orphan7 ? 'devWallet (orphan)' : 'lockers',
+      rate: '1.8%',
+      est: fmtNum(tax7d) + ' WORLD',
+      onchain: orphan7 ? orphanBadge : dash,
+      match: orphan7 ? orphanBadge : dash,
+    },
+    {
+      flow: 'Refine → 14d Tier',
+      recipient: orphan14 ? 'devWallet (orphan)' : 'lockers',
+      rate: '0.9%',
+      est: fmtNum(tax14d) + ' WORLD',
+      onchain: orphan14 ? orphanBadge : dash,
+      match: orphan14 ? orphanBadge : dash,
+    },
+    {
+      flow: 'Refine → Team',
+      recipient: 'devStakingWallet',
+      rate: '1.0%',
+      est: fmtNum(taxTeam) + ' WORLD',
+      onchain: fmtNum(devStakedWorldForTable) + ' WORLD',
+      match: okBadge,
+    },
+  ]
+
+  const fdTbody = document.getElementById('fee-dist-tbody')
+  if (fdTbody) {
+    fdTbody.innerHTML = fdRows.map(r => `
+      <tr>
+        <td><strong>${r.flow}</strong></td>
+        <td>${r.recipient}</td>
+        <td class="right mono">${r.rate}</td>
+        <td class="right mono">${r.est}</td>
+        <td class="right mono">${r.onchain}</td>
+        <td class="right mono">${r.match}</td>
+      </tr>
+    `).join('')
+  }
 
   // ── Dev / Team Position ──
   const devStakedNum = fmtWei(BigInt(devStaked || 0n))
