@@ -277,6 +277,8 @@
             <th>Address</th>
             <th class="right">Funded</th>
             <th class="right">Current</th>
+            <th class="right">Locked</th>
+            <th class="right">Adjusted</th>
             <th class="right">Δ</th>
             <th class="right">Remaining</th>
           </tr>
@@ -337,7 +339,13 @@ const SEL = {
   getProtocolStats: '0x771aceef',
   totalStaked: '0x817b1cd2',
   rewardPerTokenStored: '0xdf136d65',
+  getContinentInfo: '0x898b1021',
 }
+
+// 5 continents — used to query holder + lastPrice for the locked-ETH column
+const CONTINENT_NAMES = ['Asia', 'Africa', 'Americas', 'Europe', 'Oceania']
+// Holder gets 85% back when outbid
+const HOLDER_REFUND = 0.85
 
 const BOT_WALLETS = [
   { name: 'W0', continent: 'Asia',     addr: '0x9943eCf1C370Cb492c5c6Ab8A2bbFfC76A7c9704', funded: 0.026 },
@@ -408,6 +416,22 @@ async function getTotalStaked() {
 async function getRewardPerToken() {
   const result = await ethCall(STAKING, SEL.rewardPerTokenStored)
   return BigInt(result)
+}
+
+// getContinentInfo(uint8) returns (string,address,uint256,uint256,uint256,uint256,uint256)
+// We only need holder + lastPrice, both at fixed offsets in the encoded result.
+// Layout (post 0x): word 0 = string offset, word 1 = holder, word 2 = currentPrice,
+// word 3 = effectiveRate, word 4 = lastPrice, word 5 = secsRemaining, word 6 = holderUnrefined
+async function getContinentInfo(continentId) {
+  const idHex = continentId.toString(16).padStart(64, '0')
+  const data = SEL.getContinentInfo + idHex
+  const result = await ethCall(MINER, data)
+  const hex = result.replace(/^0x/, '')
+  const word = (i) => hex.slice(i * 64, (i + 1) * 64)
+  // Word 1: address padded — last 40 hex chars
+  const holder = '0x' + word(1).slice(24)
+  const lastPrice = BigInt('0x' + word(4))
+  return { holder: holder.toLowerCase(), lastPrice }
 }
 
 // ─── Formatters ───────────────────────────────────────────────────────────
@@ -564,7 +588,7 @@ async function refresh() {
   setText('deploy-date', new Date(DEPLOY_TS * 1000).toUTCString().slice(5, 22) + ' UTC')
 
   // Parallel RPC fetches
-  let blockNum, stats, wethReserve, worldReserve, totalStaked, rewardPerToken, stakingEth, botBalances
+  let blockNum, stats, wethReserve, worldReserve, totalStaked, rewardPerToken, stakingEth, botBalances, continents
   try {
     [
       blockNum,
@@ -575,6 +599,7 @@ async function refresh() {
       rewardPerToken,
       stakingEth,
       botBalances,
+      continents,
     ] = await Promise.all([
       getBlockNumber(),
       getProtocolStats(),
@@ -584,11 +609,20 @@ async function refresh() {
       getRewardPerToken(),
       getBalance(STAKING),
       Promise.all(BOT_WALLETS.map(b => getBalance(b.addr))),
+      Promise.all([0, 1, 2, 3, 4].map(id => getContinentInfo(id))),
     ])
   } catch (e) {
     console.error('RPC error:', e)
     return
   }
+
+  // Map: bot address (lower) → lastPrice locked in continent (in wei BigInt)
+  const lockedByBot = {}
+  continents.forEach(c => {
+    if (c.holder !== '0x0000000000000000000000000000000000000000') {
+      lockedByBot[c.holder] = c.lastPrice
+    }
+  })
 
   // Blocks elapsed
   setText('blocks', fmtNum(blockNum - DEPLOY_BLOCK, 0))
@@ -640,14 +674,21 @@ async function refresh() {
   setText('staking-eth-usd', fmtUSD(stakingEthNum * ETH_USD))
   setText('reward-per-token', Number(rewardPerToken).toExponential(3))
 
-  // Bot wallets table
+  // Bot wallets table — locked column shows ETH paid for currently-held continent,
+  // adjusted balance counts 85% of that as recoverable
   const tbody = document.getElementById('bots-tbody')
   tbody.innerHTML = ''
   BOT_WALLETS.forEach((b, i) => {
     const cur = fmtWei(botBalances[i])
-    const delta = cur - b.funded
-    const pct = (cur / b.funded) * 100
+    const lockedWei = lockedByBot[b.addr.toLowerCase()] || 0n
+    const locked = fmtWei(lockedWei)
+    const adjusted = cur + locked * HOLDER_REFUND
+    const delta = adjusted - b.funded
+    const pct = (adjusted / b.funded) * 100
     const cls = pct > 60 ? '' : pct > 30 ? 'warn' : 'crit'
+    const lockedDisplay = locked > 0
+      ? `<span style="color:#f59e0b">${locked.toFixed(4)}</span>`
+      : `<span style="color:#444">—</span>`
     const tr = document.createElement('tr')
     tr.innerHTML = `
       <td><strong>${b.name}</strong></td>
@@ -655,6 +696,8 @@ async function refresh() {
       <td class="mono"><a href="https://sepolia.basescan.org/address/${b.addr}" target="_blank" rel="noopener" style="color:#666;text-decoration:none">${shortAddr(b.addr)}</a></td>
       <td class="right mono">${b.funded.toFixed(4)}</td>
       <td class="right mono">${cur.toFixed(4)}</td>
+      <td class="right mono">${lockedDisplay}</td>
+      <td class="right mono" style="color:#aaa">${adjusted.toFixed(4)}</td>
       <td class="right mono" style="color:${delta >= 0 ? '#22c55e' : '#ef4444'}">${delta >= 0 ? '+' : ''}${delta.toFixed(4)}</td>
       <td class="right">
         <span class="mono" style="margin-right:8px">${pct.toFixed(0)}%</span>
