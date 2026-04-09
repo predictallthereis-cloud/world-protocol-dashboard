@@ -290,6 +290,134 @@
     </div>
   </section>
 
+  <!-- Token & Fee Analytics -->
+  <section>
+    <h2>Token &amp; Fee Analytics</h2>
+
+    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:18px 0 10px;">Pool Changes Since Deploy</h3>
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="card-label">WETH Δ</div>
+        <div class="card-value" id="tfa-weth-delta">—</div>
+        <div class="card-sub" id="tfa-weth-delta-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">WORLD Net Sold</div>
+        <div class="card-value amber" id="tfa-world-sold">—</div>
+        <div class="card-sub" id="tfa-world-sold-sub">into pool</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Fee Revenue</div>
+        <div class="card-value green" id="tfa-fee-revenue">—</div>
+        <div class="card-sub" id="tfa-fee-revenue-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Price Δ</div>
+        <div class="card-value" id="tfa-price-change">—</div>
+        <div class="card-sub" id="tfa-price-change-sub">vs deploy</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Refine Tax Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0">(10% per refine)</span></h3>
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="card-label">Total Refines</div>
+        <div class="card-value blue" id="tfa-refine-count">—</div>
+        <div class="card-sub" id="tfa-refine-rate">/ hour</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total Tax (WORLD)</div>
+        <div class="card-value purple" id="tfa-tax-total">—</div>
+        <div class="card-sub" id="tfa-tax-total-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">To Base Holders (63%)</div>
+        <div class="card-value green" id="tfa-tax-base">—</div>
+        <div class="card-sub" id="tfa-tax-base-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">To devWallet <span id="tfa-team-pct" style="color:#888">(orphaned)</span></div>
+        <div class="card-value amber" id="tfa-tax-team">—</div>
+        <div class="card-sub" id="tfa-tax-team-usd">$—</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Glaze Fee Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0">(15% per glaze · post-genesis)</span></h3>
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="card-label">To LP Wallet (12%)</div>
+        <div class="card-value blue" id="tfa-glaze-lp">—</div>
+        <div class="card-sub" id="tfa-glaze-lp-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">To Staking (2%)</div>
+        <div class="card-value amber" id="tfa-glaze-staking">—</div>
+        <div class="card-sub" id="tfa-glaze-staking-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">To devWallet (1%)</div>
+        <div class="card-value purple" id="tfa-glaze-dev">—</div>
+        <div class="card-sub" id="tfa-glaze-dev-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total Fees (15%)</div>
+        <div class="card-value green" id="tfa-glaze-total">—</div>
+        <div class="card-sub" id="tfa-glaze-total-usd">$—</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Dev / Team Position</h3>
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="card-label">Dev WORLD Staked</div>
+        <div class="card-value green" id="tfa-dev-staked">—</div>
+        <div class="card-sub" id="tfa-dev-staked-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Dev WORLD Free</div>
+        <div class="card-value blue" id="tfa-dev-free">—</div>
+        <div class="card-sub" id="tfa-dev-free-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Dev Staking Share</div>
+        <div class="card-value purple" id="tfa-dev-share">—</div>
+        <div class="card-sub" id="tfa-dev-share-sub">of pool</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Dev Pending ETH</div>
+        <div class="card-value amber" id="tfa-dev-pending">—</div>
+        <div class="card-sub" id="tfa-dev-pending-usd">$—</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">
+      Lock Tiers
+      <span id="tfa-orphan-badge" style="display:none;background:#f59e0b18;border:1px solid #f59e0b40;color:#f59e0b;font-size:9px;font-weight:600;padding:3px 8px;border-radius:4px;margin-left:8px;letter-spacing:0;text-transform:none">⚠ No lockers — 27% extra to team</span>
+    </h3>
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="card-label">Total Locked 7d</div>
+        <div class="card-value blue" id="tfa-lock-7d">—</div>
+        <div class="card-sub">WORLD</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total Locked 14d</div>
+        <div class="card-value purple" id="tfa-lock-14d">—</div>
+        <div class="card-sub">WORLD</div>
+      </div>
+      <div class="card">
+        <div class="card-label">7d Tier Status</div>
+        <div class="card-value" id="tfa-lock-7d-status">—</div>
+        <div class="card-sub" id="tfa-lock-7d-status-sub">18% of refine tax</div>
+      </div>
+      <div class="card">
+        <div class="card-label">14d Tier Status</div>
+        <div class="card-value" id="tfa-lock-14d-status">—</div>
+        <div class="card-sub" id="tfa-lock-14d-status-sub">9% of refine tax</div>
+      </div>
+    </div>
+  </section>
+
   <!-- Staking -->
   <section>
     <h2>Staking</h2>
@@ -383,11 +511,32 @@ const SEL = {
   rewardPerTokenStored: '0xdf136d65',
   getContinentInfo: '0x898b1021',
   token0: '0x0dfe1681',
+  totalLocked7d: '0x349d1264',
+  totalLocked14d: '0x94f79fd6',
+  stakedBalance: '0x60217267',
+  earned: '0x008cc262',
 }
 
+// Refine tax flow constants (REFINE_TAX_BPS=1000 → 10% of refined amount)
+const REFINE_TAX = 0.10
+const TAX_BASE_FRAC = 0.63 // → all unrefined holders
+const TAX_7D_FRAC   = 0.18 // → 7d+14d locked (orphans to team if empty)
+const TAX_14D_FRAC  = 0.09 // → 14d locked only (orphans to team if empty)
+const TAX_TEAM_FRAC = 0.10 // → devStakingWallet (always)
+
+// Glaze fee flow constants (post-genesis takeovers, 15% total to fees)
+const GLAZE_HOLDER_FRAC  = 0.85 // → previous holder
+const GLAZE_LP_FRAC      = 0.12 // → LP wallet
+const GLAZE_STAKING_FRAC = 0.02 // → staking contract
+const GLAZE_DEV_FRAC     = 0.01 // → devWallet
+
+const DEV_WALLET = '0xbA5A2AC63e276aca5c257e33f98B9071026B58D5'
+const LP_WALLET  = '0x4fE13f891650933954De54C3971574aBd5eEcd13'
+
 // Event topic hashes
-const TOPIC_GLAZE = '0xe012aff215c01cc9690123113c09287f9d62bf9e543970d9371e3247cecdd734'
-const TOPIC_SWAP  = '0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67'
+const TOPIC_GLAZE   = '0xe012aff215c01cc9690123113c09287f9d62bf9e543970d9371e3247cecdd734'
+const TOPIC_SWAP    = '0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67'
+const TOPIC_REFINED = '0xe4b511e3f4d15fae8db8459b236992a496527b398f421ed29f6a3dd36f6f6e7a'
 
 const BOT_WALLETS = [
   { name: 'W0', continent: 'Asia',     addr: '0x9943eCf1C370Cb492c5c6Ab8A2bbFfC76A7c9704', funded: 0.026 },
@@ -410,6 +559,8 @@ let glazeCache = []         // {continentId, newHolder, prevHolder, price (BigIn
 let glazeCacheLastBlock = DEPLOY_BLOCK - 1
 let swapCache = []          // {block, ts, sqrtPriceX96 (BigInt), priceETH (number)}
 let swapCacheLastBlock = DEPLOY_BLOCK - 1
+let refineCache = []        // {user, amount (BigInt), tax (BigInt), net (BigInt), block, ts}
+let refineCacheLastBlock = DEPLOY_BLOCK - 1
 const blockTsCache = {}     // blockNumber -> unix timestamp
 let lastTokenPrice = DEPLOY_PRICE
 let activeTimeframe = 'ALL'
@@ -563,6 +714,32 @@ async function refreshGlazeCache(currentBlock) {
   glazeCache.push(...decoded)
   glazeCache.sort((a, b) => a.block - b.block)
   glazeCacheLastBlock = currentBlock
+}
+
+async function refreshRefineCache(currentBlock) {
+  const fromBlock = refineCacheLastBlock + 1
+  if (fromBlock > currentBlock) return
+  const logs = await fetchLogsChunked({
+    address: MINER,
+    topics: [TOPIC_REFINED],
+  }, fromBlock, currentBlock)
+  // Refined(address indexed user, uint256 amount, uint256 tax, uint256 net)
+  // topics[1] = user; data = amount + tax + net (3 × 32 bytes)
+  const decoded = logs.map(log => {
+    const data = log.data.replace(/^0x/, '')
+    return {
+      user: ('0x' + log.topics[1].slice(26)).toLowerCase(),
+      amount: BigInt('0x' + data.slice(0, 64)),
+      tax: BigInt('0x' + data.slice(64, 128)),
+      net: BigInt('0x' + data.slice(128, 192)),
+      block: parseInt(log.blockNumber, 16),
+    }
+  })
+  await fillBlockTimestamps(decoded.map(d => d.block))
+  decoded.forEach(d => { d.ts = blockTsCache[d.block] })
+  refineCache.push(...decoded)
+  refineCache.sort((a, b) => a.block - b.block)
+  refineCacheLastBlock = currentBlock
 }
 
 async function refreshSwapCache(currentBlock) {
@@ -881,6 +1058,116 @@ function renderBotPerformanceTable() {
   })
 }
 
+function renderTokenFeeAnalytics(args) {
+  const {
+    wethR, worldR, tokenPrice, uptimeSec,
+    totalLocked7d, totalLocked14d,
+    devStaked, devEarned, devWorldFree, totalStaked,
+    lpWalletEth, stakingEth,
+  } = args
+
+  // ── Pool Changes Since Deploy ──
+  const wethDelta = wethR - DEPLOY_WETH
+  setText('tfa-weth-delta', (wethDelta >= 0 ? '+' : '') + fmtETH(wethDelta, 6) + ' ETH')
+  setText('tfa-weth-delta-usd', fmtUSD(wethDelta * ETH_USD))
+  const el1 = document.getElementById('tfa-weth-delta')
+  if (el1) el1.style.color = wethDelta >= 0 ? 'var(--green)' : 'var(--red)'
+
+  const worldSold = worldR - DEPLOY_WORLD
+  setText('tfa-world-sold', (worldSold >= 0 ? '+' : '') + fmtNum(worldSold))
+  setText('tfa-world-sold-sub', fmtUSD(worldSold * tokenPrice * ETH_USD) + ' · ' + (worldSold >= 0 ? 'net sold' : 'net bought'))
+
+  setText('tfa-fee-revenue', (wethDelta >= 0 ? '+' : '') + fmtETH(wethDelta, 6) + ' ETH')
+  setText('tfa-fee-revenue-usd', fmtUSD(wethDelta * ETH_USD))
+
+  const priceChangePct = ((tokenPrice / DEPLOY_PRICE) - 1) * 100
+  setText('tfa-price-change', (priceChangePct >= 0 ? '+' : '') + priceChangePct.toFixed(2) + '%')
+  const el2 = document.getElementById('tfa-price-change')
+  if (el2) el2.style.color = priceChangePct >= 0 ? 'var(--green)' : 'var(--red)'
+  setText('tfa-price-change-sub', '$' + (tokenPrice * ETH_USD).toFixed(8))
+
+  // ── Refine Tax Flow ──
+  const refineCount = refineCache.length
+  setText('tfa-refine-count', refineCount.toString())
+  const hoursElapsed = Math.max(0.001, uptimeSec / 3600)
+  setText('tfa-refine-rate', (refineCount / hoursElapsed).toFixed(1) + ' / hour')
+
+  let totalTaxWei = 0n
+  for (const r of refineCache) totalTaxWei += r.tax
+  const totalTax = fmtWei(totalTaxWei)
+  setText('tfa-tax-total', fmtNum(totalTax) + ' WORLD')
+  setText('tfa-tax-total-usd', fmtUSD(totalTax * tokenPrice * ETH_USD))
+
+  const taxBase = totalTax * TAX_BASE_FRAC
+  setText('tfa-tax-base', fmtNum(taxBase) + ' WORLD')
+  setText('tfa-tax-base-usd', fmtUSD(taxBase * tokenPrice * ETH_USD))
+
+  // Effective devWallet share = always-team (10%) + orphans
+  const noLockers = totalLocked7d === 0n && totalLocked14d === 0n
+  let teamFrac = TAX_TEAM_FRAC
+  if (totalLocked7d === 0n && totalLocked14d === 0n) teamFrac += TAX_7D_FRAC + TAX_14D_FRAC
+  else if (totalLocked14d === 0n) teamFrac += TAX_14D_FRAC
+  const taxTeam = totalTax * teamFrac
+  setText('tfa-tax-team', fmtNum(taxTeam) + ' WORLD')
+  setText('tfa-tax-team-usd', fmtUSD(taxTeam * tokenPrice * ETH_USD))
+  setText('tfa-team-pct', '(' + (teamFrac * 100).toFixed(0) + '%)')
+
+  // ── Glaze Fee Flow (post-genesis only) ──
+  let glazeVolWei = 0n
+  for (const g of glazeCache) {
+    if (g.prevHolder !== '0x0000000000000000000000000000000000000000') {
+      glazeVolWei += g.price
+    }
+  }
+  const glazeVol = fmtWei(glazeVolWei)
+  const glazeLP      = glazeVol * GLAZE_LP_FRAC
+  const glazeStaking = glazeVol * GLAZE_STAKING_FRAC
+  const glazeDev     = glazeVol * GLAZE_DEV_FRAC
+  const glazeFeesTotal = glazeLP + glazeStaking + glazeDev
+
+  setText('tfa-glaze-lp', fmtETH(glazeLP, 5) + ' ETH')
+  setText('tfa-glaze-lp-usd', fmtUSD(glazeLP * ETH_USD))
+  setText('tfa-glaze-staking', fmtETH(glazeStaking, 5) + ' ETH')
+  setText('tfa-glaze-staking-usd', fmtUSD(glazeStaking * ETH_USD))
+  setText('tfa-glaze-dev', fmtETH(glazeDev, 5) + ' ETH')
+  setText('tfa-glaze-dev-usd', fmtUSD(glazeDev * ETH_USD))
+  setText('tfa-glaze-total', fmtETH(glazeFeesTotal, 5) + ' ETH')
+  setText('tfa-glaze-total-usd', fmtUSD(glazeFeesTotal * ETH_USD))
+
+  // ── Dev / Team Position ──
+  const devStakedNum = fmtWei(devStaked)
+  const devFreeNum = fmtWei(devWorldFree)
+  setText('tfa-dev-staked', fmtNum(devStakedNum) + ' WORLD')
+  setText('tfa-dev-staked-usd', fmtUSD(devStakedNum * tokenPrice * ETH_USD))
+  setText('tfa-dev-free', fmtNum(devFreeNum) + ' WORLD')
+  setText('tfa-dev-free-usd', fmtUSD(devFreeNum * tokenPrice * ETH_USD))
+  const totalStakedNum = fmtWei(totalStaked)
+  const sharePct = totalStakedNum > 0 ? (devStakedNum / totalStakedNum) * 100 : 0
+  setText('tfa-dev-share', sharePct.toFixed(1) + '%')
+  setText('tfa-dev-share-sub', fmtNum(totalStakedNum) + ' total staked')
+  const devEarnedEth = fmtWei(devEarned)
+  setText('tfa-dev-pending', fmtETH(devEarnedEth, 6) + ' ETH')
+  setText('tfa-dev-pending-usd', fmtUSD(devEarnedEth * ETH_USD))
+
+  // ── Lock Tiers ──
+  setText('tfa-lock-7d', fmtNum(fmtWei(totalLocked7d)))
+  setText('tfa-lock-14d', fmtNum(fmtWei(totalLocked14d)))
+  const orphan7 = totalLocked7d === 0n && totalLocked14d === 0n
+  const orphan14 = totalLocked14d === 0n
+  setText('tfa-lock-7d-status', orphan7 ? 'ORPHANED' : 'ACTIVE')
+  const el7 = document.getElementById('tfa-lock-7d-status')
+  if (el7) el7.style.color = orphan7 ? 'var(--amber)' : 'var(--green)'
+  setText('tfa-lock-7d-status-sub', orphan7 ? '18% → devWallet' : '18% to lockers')
+  setText('tfa-lock-14d-status', orphan14 ? 'ORPHANED' : 'ACTIVE')
+  const el14 = document.getElementById('tfa-lock-14d-status')
+  if (el14) el14.style.color = orphan14 ? 'var(--amber)' : 'var(--green)'
+  setText('tfa-lock-14d-status-sub', orphan14 ? '9% → devWallet' : '9% to lockers')
+
+  // Orphan badge on the section header
+  const badge = document.getElementById('tfa-orphan-badge')
+  if (badge) badge.style.display = noLockers ? 'inline-block' : 'none'
+}
+
 function renderProtocolOverviewFromGlazes() {
   const total = glazeCache.length
   const totalVolWei = glazeCache.reduce((acc, e) => acc + e.price, 0n)
@@ -976,19 +1263,30 @@ async function refresh() {
   // Update price chart with current price (already in cache loop below)
   updatePriceChart()
 
-  // ─── Phase 2: events + staking + bots in parallel ───
+  // ─── Phase 2: events + staking + bots + dev/lock state in parallel ───
   let totalStaked, rewardPerToken, stakingEth, botBalances, continents
+  let totalLocked7d, totalLocked14d, devStaked, devEarned, devWorldFree, lpWalletEth
   try {
     await Promise.all([
       refreshGlazeCache(blockNum),
       refreshSwapCache(blockNum),
+      refreshRefineCache(blockNum),
     ])
-    ;[totalStaked, rewardPerToken, stakingEth, botBalances, continents] = await Promise.all([
+    ;[
+      totalStaked, rewardPerToken, stakingEth, botBalances, continents,
+      totalLocked7d, totalLocked14d, devStaked, devEarned, devWorldFree, lpWalletEth,
+    ] = await Promise.all([
       getTotalStaked(),
       getRewardPerToken(),
       getBalance(STAKING),
       Promise.all(BOT_WALLETS.map(b => getBalance(b.addr))),
       Promise.all([0, 1, 2, 3, 4].map(id => getContinentInfo(id))),
+      ethCall(MINER, SEL.totalLocked7d).then(r => BigInt(r)),
+      ethCall(MINER, SEL.totalLocked14d).then(r => BigInt(r)),
+      ethCall(STAKING, SEL.stakedBalance + padAddress(DEV_WALLET)).then(r => BigInt(r)),
+      ethCall(STAKING, SEL.earned + padAddress(DEV_WALLET)).then(r => BigInt(r)),
+      balanceOf(TOKEN, DEV_WALLET),
+      getBalance(LP_WALLET),
     ])
   } catch (e) {
     console.error('Phase 2 error:', e)
@@ -1001,6 +1299,14 @@ async function refresh() {
   // Per-continent + bot performance tables
   renderContinentTable()
   renderBotPerformanceTable()
+
+  // Token & Fee Analytics section
+  renderTokenFeeAnalytics({
+    wethR, worldR, tokenPrice, uptimeSec,
+    totalLocked7d, totalLocked14d,
+    devStaked, devEarned, devWorldFree, totalStaked,
+    lpWalletEth, stakingEth,
+  })
 
   // Update price chart with latest swap data
   updatePriceChart()
