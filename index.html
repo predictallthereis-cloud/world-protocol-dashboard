@@ -318,8 +318,32 @@
       </div>
     </div>
 
-    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Refine Tax Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0">(10% per refine)</span></h3>
+    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">LP Position</h3>
     <div class="grid grid-4">
+      <div class="card">
+        <div class="card-label">LP Wallet ETH</div>
+        <div class="card-value blue" id="tfa-lp-current">—</div>
+        <div class="card-sub" id="tfa-lp-current-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total LP Fees Routed</div>
+        <div class="card-value purple" id="tfa-lp-routed">—</div>
+        <div class="card-sub" id="tfa-lp-routed-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">LP Fees Used</div>
+        <div class="card-value amber" id="tfa-lp-used">—</div>
+        <div class="card-sub" id="tfa-lp-used-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Est. Liquidity Added</div>
+        <div class="card-value green" id="tfa-lp-added">—</div>
+        <div class="card-sub" id="tfa-lp-added-sub">eth + matched WORLD</div>
+      </div>
+    </div>
+
+    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Refine Tax Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0">(10% per refine)</span></h3>
+    <div class="grid grid-2">
       <div class="card">
         <div class="card-label">Total Refines</div>
         <div class="card-value blue" id="tfa-refine-count">—</div>
@@ -330,15 +354,27 @@
         <div class="card-value purple" id="tfa-tax-total">—</div>
         <div class="card-sub" id="tfa-tax-total-usd">$—</div>
       </div>
+    </div>
+    <div class="grid grid-4" style="margin-top:12px;">
       <div class="card">
-        <div class="card-label">To Base Holders (63%)</div>
+        <div class="card-label">Base Holders (63%)</div>
         <div class="card-value green" id="tfa-tax-base">—</div>
-        <div class="card-sub" id="tfa-tax-base-usd">$—</div>
+        <div class="card-sub" id="tfa-tax-base-sub">→ unrefined holders</div>
       </div>
       <div class="card">
-        <div class="card-label">To devWallet <span id="tfa-team-pct" style="color:#888">(orphaned)</span></div>
+        <div class="card-label">7d Tier (18%)</div>
+        <div class="card-value blue" id="tfa-tax-7d">—</div>
+        <div class="card-sub" id="tfa-tax-7d-sub">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">14d Tier (9%)</div>
+        <div class="card-value purple" id="tfa-tax-14d">—</div>
+        <div class="card-sub" id="tfa-tax-14d-sub">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Team (10%)</div>
         <div class="card-value amber" id="tfa-tax-team">—</div>
-        <div class="card-sub" id="tfa-tax-team-usd">$—</div>
+        <div class="card-sub" id="tfa-tax-team-sub">→ devWallet</div>
       </div>
     </div>
 
@@ -1086,6 +1122,30 @@ function renderTokenFeeAnalytics(args) {
   if (el2) el2.style.color = priceChangePct >= 0 ? 'var(--green)' : 'var(--red)'
   setText('tfa-price-change-sub', '$' + (tokenPrice * ETH_USD).toFixed(8))
 
+  // ── Glaze volume (post-genesis only) — used by both LP Position and Glaze Fee Flow ──
+  let glazeVolWei = 0n
+  for (const g of glazeCache) {
+    if (g.prevHolder !== '0x0000000000000000000000000000000000000000') {
+      glazeVolWei += g.price
+    }
+  }
+  const glazeVol = fmtWei(glazeVolWei)
+
+  // ── LP Position ──
+  const lpCurrentEth = fmtWei(BigInt(lpWalletEth || 0n))
+  const lpRoutedEth  = glazeVol * GLAZE_LP_FRAC
+  const lpUsedEth    = Math.max(0, lpRoutedEth - lpCurrentEth)
+  const lpAddedEth   = lpUsedEth * 2 // bot pairs ETH with matched WORLD
+
+  setText('tfa-lp-current', fmtETH(lpCurrentEth, 5) + ' ETH')
+  setText('tfa-lp-current-usd', fmtUSD(lpCurrentEth * ETH_USD))
+  setText('tfa-lp-routed', fmtETH(lpRoutedEth, 5) + ' ETH')
+  setText('tfa-lp-routed-usd', fmtUSD(lpRoutedEth * ETH_USD))
+  setText('tfa-lp-used', fmtETH(lpUsedEth, 5) + ' ETH')
+  setText('tfa-lp-used-usd', fmtUSD(lpUsedEth * ETH_USD))
+  setText('tfa-lp-added', '~' + fmtETH(lpAddedEth, 5) + ' ETH')
+  setText('tfa-lp-added-sub', '+ matched WORLD · ' + fmtUSD(lpAddedEth * ETH_USD))
+
   // ── Refine Tax Flow ──
   const refineCount = refineCache.length
   setText('tfa-refine-count', refineCount.toString())
@@ -1098,28 +1158,32 @@ function renderTokenFeeAnalytics(args) {
   setText('tfa-tax-total', fmtNum(totalTax) + ' WORLD')
   setText('tfa-tax-total-usd', fmtUSD(totalTax * tokenPrice * ETH_USD))
 
+  // 4-card breakdown — fixed fractions, conditional subtitles for orphan tiers
   const taxBase = totalTax * TAX_BASE_FRAC
   setText('tfa-tax-base', fmtNum(taxBase) + ' WORLD')
-  setText('tfa-tax-base-usd', fmtUSD(taxBase * tokenPrice * ETH_USD))
+  setText('tfa-tax-base-sub', '→ unrefined holders · ' + fmtUSD(taxBase * tokenPrice * ETH_USD))
 
-  // Effective devWallet share = always-team (10%) + orphans
-  const noLockers = totalLocked7d === 0n && totalLocked14d === 0n
-  let teamFrac = TAX_TEAM_FRAC
-  if (totalLocked7d === 0n && totalLocked14d === 0n) teamFrac += TAX_7D_FRAC + TAX_14D_FRAC
-  else if (totalLocked14d === 0n) teamFrac += TAX_14D_FRAC
-  const taxTeam = totalTax * teamFrac
+  const tax7d = totalTax * TAX_7D_FRAC
+  const orphan7 = totalLocked7d === 0n
+  setText('tfa-tax-7d', fmtNum(tax7d) + ' WORLD')
+  setText('tfa-tax-7d-sub', (orphan7 ? '→ devWallet (orphaned)' : '→ lockers') + ' · ' + fmtUSD(tax7d * tokenPrice * ETH_USD))
+  const el7dSub = document.getElementById('tfa-tax-7d-sub')
+  if (el7dSub) el7dSub.style.color = orphan7 ? 'var(--amber)' : ''
+
+  const tax14d = totalTax * TAX_14D_FRAC
+  const orphan14 = totalLocked14d === 0n
+  setText('tfa-tax-14d', fmtNum(tax14d) + ' WORLD')
+  setText('tfa-tax-14d-sub', (orphan14 ? '→ devWallet (orphaned)' : '→ lockers') + ' · ' + fmtUSD(tax14d * tokenPrice * ETH_USD))
+  const el14dSub = document.getElementById('tfa-tax-14d-sub')
+  if (el14dSub) el14dSub.style.color = orphan14 ? 'var(--amber)' : ''
+
+  const taxTeam = totalTax * TAX_TEAM_FRAC
   setText('tfa-tax-team', fmtNum(taxTeam) + ' WORLD')
-  setText('tfa-tax-team-usd', fmtUSD(taxTeam * tokenPrice * ETH_USD))
-  setText('tfa-team-pct', '(' + (teamFrac * 100).toFixed(0) + '%)')
+  setText('tfa-tax-team-sub', '→ devWallet · ' + fmtUSD(taxTeam * tokenPrice * ETH_USD))
+
+  const noLockers = orphan7 && orphan14
 
   // ── Glaze Fee Flow (post-genesis only) ──
-  let glazeVolWei = 0n
-  for (const g of glazeCache) {
-    if (g.prevHolder !== '0x0000000000000000000000000000000000000000') {
-      glazeVolWei += g.price
-    }
-  }
-  const glazeVol = fmtWei(glazeVolWei)
   const glazeLP      = glazeVol * GLAZE_LP_FRAC
   const glazeStaking = glazeVol * GLAZE_STAKING_FRAC
   const glazeDev     = glazeVol * GLAZE_DEV_FRAC
@@ -1135,8 +1199,8 @@ function renderTokenFeeAnalytics(args) {
   setText('tfa-glaze-total-usd', fmtUSD(glazeFeesTotal * ETH_USD))
 
   // ── Dev / Team Position ──
-  const devStakedNum = fmtWei(devStaked)
-  const devFreeNum = fmtWei(devWorldFree)
+  const devStakedNum = fmtWei(BigInt(devStaked || 0n))
+  const devFreeNum = fmtWei(BigInt(devWorldFree || 0n))
   setText('tfa-dev-staked', fmtNum(devStakedNum) + ' WORLD')
   setText('tfa-dev-staked-usd', fmtUSD(devStakedNum * tokenPrice * ETH_USD))
   setText('tfa-dev-free', fmtNum(devFreeNum) + ' WORLD')
@@ -1152,8 +1216,6 @@ function renderTokenFeeAnalytics(args) {
   // ── Lock Tiers ──
   setText('tfa-lock-7d', fmtNum(fmtWei(totalLocked7d)))
   setText('tfa-lock-14d', fmtNum(fmtWei(totalLocked14d)))
-  const orphan7 = totalLocked7d === 0n && totalLocked14d === 0n
-  const orphan14 = totalLocked14d === 0n
   setText('tfa-lock-7d-status', orphan7 ? 'ORPHANED' : 'ACTIVE')
   const el7 = document.getElementById('tfa-lock-7d-status')
   if (el7) el7.style.color = orphan7 ? 'var(--amber)' : 'var(--green)'
