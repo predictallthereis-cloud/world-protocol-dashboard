@@ -476,96 +476,92 @@ function shortAddr(a) {
 }
 
 // ─── Charts ───────────────────────────────────────────────────────────────
-const feeChart = new Chart(document.getElementById('fee-chart').getContext('2d'), {
-  type: 'doughnut',
-  data: {
-    labels: ['Previous holder', 'LP', 'Stakers', 'Team'],
-    datasets: [{
-      data: [85, 12, 2, 1],
-      backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7'],
-      borderColor: '#0a0a0a',
-      borderWidth: 2,
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '70%',
-    plugins: {
-      legend: {
-        position: 'right',
-        labels: { color: '#aaa', font: { size: 11, family: 'Inter' }, padding: 12, boxWidth: 12 }
-      },
-      tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}%` } },
-    },
-  },
-})
+// Lazy-init: created on first refresh() so we can guard against the
+// chartjs-adapter-date-fns dependency (we use the linear scale instead of
+// time scale to avoid loading any adapter).
+let feeChart = null
+let priceChart = null
+const priceData = [] // {x:ms, y:price}; seeded on first refresh
 
-// Price chart — populated live; seeded with deploy point
-const priceData = [{ x: DEPLOY_TS * 1000, y: DEPLOY_PRICE }]
-const priceChart = new Chart(document.getElementById('price-chart').getContext('2d'), {
-  type: 'line',
-  data: {
-    datasets: [{
-      label: 'ETH/WORLD',
-      data: priceData,
-      borderColor: '#22c55e',
-      backgroundColor: 'rgba(34,197,94,0.12)',
-      borderWidth: 2,
-      fill: true,
-      tension: 0.3,
-      pointRadius: 0,
-      pointHoverRadius: 4,
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          title: (items) => new Date(items[0].parsed.x).toLocaleTimeString(),
-          label: (ctx) => ctx.parsed.y.toExponential(4) + ' ETH',
+function initFeeChart() {
+  feeChart = new Chart(document.getElementById('fee-chart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Previous holder', 'LP', 'Stakers', 'Team'],
+      datasets: [{
+        data: [85, 12, 2, 1],
+        backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7'],
+        borderColor: '#0a0a0a',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { color: '#aaa', font: { size: 11, family: 'Inter' }, padding: 12, boxWidth: 12 }
         },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}%` } },
       },
     },
-    scales: {
-      x: {
-        type: 'time',
-        time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } },
-        grid: { color: 'rgba(255,255,255,0.04)' },
-        ticks: { color: '#666', font: { size: 10 } },
-      },
-      y: {
-        grid: { color: 'rgba(255,255,255,0.04)' },
-        ticks: {
-          color: '#666', font: { size: 10 },
-          callback: (v) => Number(v).toExponential(1),
-        },
-      },
-    },
-  },
-})
-
-// Time scale needs adapter — use simple linear if date-fns not available
-// (Chart.js 4 includes time scale natively but needs adapter for parsing)
-// Fallback: convert to numeric x and use linear scale
-function rebuildPriceChartLinear() {
-  priceChart.config.options.scales.x = {
-    type: 'linear',
-    grid: { color: 'rgba(255,255,255,0.04)' },
-    ticks: {
-      color: '#666', font: { size: 10 },
-      callback: (v) => {
-        const minsAgo = Math.round((Date.now() / 1000 - v / 1000) / 60)
-        return minsAgo === 0 ? 'now' : '-' + minsAgo + 'm'
-      },
-    },
-  }
-  priceChart.update('none')
+  })
 }
-rebuildPriceChartLinear()
+
+function initPriceChart() {
+  priceChart = new Chart(document.getElementById('price-chart').getContext('2d'), {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'ETH/WORLD',
+        data: priceData,
+        borderColor: '#22c55e',
+        backgroundColor: 'rgba(34,197,94,0.12)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      parsing: false, // x is already numeric, y already numeric
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            title: (items) => new Date(items[0].parsed.x).toLocaleTimeString(),
+            label: (ctx) => ctx.parsed.y.toExponential(4) + ' ETH',
+          },
+        },
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#666', font: { size: 10 },
+            callback: (v) => {
+              const minsAgo = Math.round((Date.now() - v) / 60000)
+              return minsAgo === 0 ? 'now' : '-' + minsAgo + 'm'
+            },
+          },
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#666', font: { size: 10 },
+            callback: (v) => Number(v).toExponential(1),
+          },
+        },
+      },
+    },
+  })
+}
 
 // ─── Render functions ─────────────────────────────────────────────────────
 function setText(id, text) {
@@ -580,57 +576,42 @@ function setColor(id, cls) {
   if (cls) el.classList.add(cls)
 }
 
+// Lazy-init charts on first refresh so DOM exists and Chart constructor never crashes module load
+function ensureCharts() {
+  if (!feeChart) initFeeChart()
+  if (!priceChart) initPriceChart()
+}
+
 async function refresh() {
-  // Uptime
+  ensureCharts()
+
+  // ── Uptime (no RPC) ──
   const now = Math.floor(Date.now() / 1000)
   const uptimeSec = now - DEPLOY_TS
   setText('uptime', fmtUptime(uptimeSec))
   setText('deploy-date', new Date(DEPLOY_TS * 1000).toUTCString().slice(5, 22) + ' UTC')
 
-  // Parallel RPC fetches
-  let blockNum, stats, wethReserve, worldReserve, totalStaked, rewardPerToken, stakingEth, botBalances, continents
+  // ── PHASE 1: core data (block + protocol + pool) ──
+  // Renders immediately so the user sees the price/mcap update fast
+  let blockNum, stats, wethReserve, worldReserve, tokenPrice
   try {
-    [
-      blockNum,
-      stats,
-      wethReserve,
-      worldReserve,
-      totalStaked,
-      rewardPerToken,
-      stakingEth,
-      botBalances,
-      continents,
-    ] = await Promise.all([
+    [blockNum, stats, wethReserve, worldReserve] = await Promise.all([
       getBlockNumber(),
       getProtocolStats(),
       balanceOf(WETH, POOL),
       balanceOf(TOKEN, POOL),
-      getTotalStaked(),
-      getRewardPerToken(),
-      getBalance(STAKING),
-      Promise.all(BOT_WALLETS.map(b => getBalance(b.addr))),
-      Promise.all([0, 1, 2, 3, 4].map(id => getContinentInfo(id))),
     ])
   } catch (e) {
-    console.error('RPC error:', e)
+    console.error('Phase 1 RPC error:', e)
     return
   }
-
-  // Map: bot address (lower) → lastPrice locked in continent (in wei BigInt)
-  const lockedByBot = {}
-  continents.forEach(c => {
-    if (c.holder !== '0x0000000000000000000000000000000000000000') {
-      lockedByBot[c.holder] = c.lastPrice
-    }
-  })
 
   // Blocks elapsed
   setText('blocks', fmtNum(blockNum - DEPLOY_BLOCK, 0))
 
-  // Glaze events estimate (5h window proxy)
-  // We don't fetch logs (too expensive); show "—" and a note
+  // Glaze events estimate (crude proxy: 51 glazes / 10k blocks observed)
   const blocksElapsed = blockNum - DEPLOY_BLOCK
-  const estGlazes = Math.round(blocksElapsed * 51 / 10000) // crude: 51 glazes / 10k blocks observed
+  const estGlazes = Math.round(blocksElapsed * 51 / 10000)
   setText('glazes', fmtNum(estGlazes, 0))
 
   // Protocol stats: [totalMinted, maxMineable, currentEpoch, totalUnrefined]
@@ -639,16 +620,16 @@ async function refresh() {
   setText('minted', fmtNum(totalMinted))
   setText('minted-pct', ((totalMinted / MAX_SUPPLY) * 100).toFixed(2) + '% of max')
 
-  // Pool reserves
+  // Pool reserves + token price
   const wethR = fmtWei(wethReserve)
   const worldR = fmtWei(worldReserve)
+  tokenPrice = wethR / worldR
   setText('weth-reserve', fmtETH(wethR) + ' ETH')
   setText('weth-reserve-usd', fmtUSD(wethR * ETH_USD))
   setText('world-reserve', fmtNum(worldR))
-  const tokenPrice = wethR / worldR
   setText('world-reserve-usd', fmtUSD(worldR * tokenPrice * ETH_USD))
 
-  // Token price
+  // Token price card
   setText('price', tokenPrice.toExponential(4) + ' ETH')
   setText('price-usd', fmtUSD(tokenPrice * ETH_USD))
   const priceChange = ((tokenPrice / DEPLOY_PRICE) - 1) * 100
@@ -656,7 +637,7 @@ async function refresh() {
   setText('price-change', sign + priceChange.toFixed(2) + '%')
   setColor('price-change', priceChange >= 0 ? 'green' : 'red')
 
-  // Mining
+  // Mining cards (depend on tokenPrice)
   setText('mining-minted', fmtNum(totalMinted) + ' WORLD')
   setText('mining-minted-usd', fmtUSD(totalMinted * tokenPrice * ETH_USD))
   const hoursElapsed = uptimeSec / 3600
@@ -664,6 +645,27 @@ async function refresh() {
   setText('mining-rate', fmtNum(rate) + ' /h')
   setText('unrefined', fmtNum(totalUnrefined) + ' WORLD')
   setText('unrefined-usd', fmtUSD(totalUnrefined * tokenPrice * ETH_USD))
+
+  // Push to price chart immediately
+  priceData.push({ x: Date.now(), y: tokenPrice })
+  if (priceData.length > 200) priceData.shift()
+  priceChart.update('none')
+
+  // ── PHASE 2: staking + bot wallets + continents ──
+  // Heavier — kicks off after phase 1 has rendered
+  let totalStaked, rewardPerToken, stakingEth, botBalances, continents
+  try {
+    [totalStaked, rewardPerToken, stakingEth, botBalances, continents] = await Promise.all([
+      getTotalStaked(),
+      getRewardPerToken(),
+      getBalance(STAKING),
+      Promise.all(BOT_WALLETS.map(b => getBalance(b.addr))),
+      Promise.all([0, 1, 2, 3, 4].map(id => getContinentInfo(id))),
+    ])
+  } catch (e) {
+    console.error('Phase 2 RPC error:', e)
+    return
+  }
 
   // Staking
   const totalStakedNum = fmtWei(totalStaked)
@@ -674,8 +676,17 @@ async function refresh() {
   setText('staking-eth-usd', fmtUSD(stakingEthNum * ETH_USD))
   setText('reward-per-token', Number(rewardPerToken).toExponential(3))
 
-  // Bot wallets table — locked column shows ETH paid for currently-held continent,
-  // adjusted balance counts 85% of that as recoverable
+  // Map: bot address (lower) → lastPrice locked in continent (BigInt wei)
+  // lastPrice is what the holder PAID to enter; on outbid they receive ~85% back.
+  const lockedByBot = {}
+  continents.forEach(c => {
+    if (c.holder !== '0x0000000000000000000000000000000000000000') {
+      lockedByBot[c.holder] = c.lastPrice
+    }
+  })
+
+  // Bot wallets table — locked column shows the lastPrice paid for the held
+  // continent; adjusted balance = current + locked × 0.85 (holder refund cut)
   const tbody = document.getElementById('bots-tbody')
   tbody.innerHTML = ''
   BOT_WALLETS.forEach((b, i) => {
@@ -706,11 +717,6 @@ async function refresh() {
     `
     tbody.appendChild(tr)
   })
-
-  // Update price chart (keep last 200 points)
-  priceData.push({ x: Date.now(), y: tokenPrice })
-  if (priceData.length > 200) priceData.shift()
-  priceChart.update('none')
 }
 
 // ─── Auto-refresh ─────────────────────────────────────────────────────────
