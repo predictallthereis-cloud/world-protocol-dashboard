@@ -178,7 +178,7 @@
         <div class="card-sub" id="deploy-date">since deploy</div>
       </div>
       <div class="card">
-        <div class="card-label">Total Glazes</div>
+        <div class="card-label">Total Conquers</div>
         <div class="card-value amber" id="total-glazes">—</div>
         <div class="card-sub" id="glazes-rate">/ hour</div>
       </div>
@@ -215,9 +215,36 @@
         <div class="card-sub" id="fee-revenue-sub">since deploy</div>
       </div>
       <div class="card">
-        <div class="card-label">Net WORLD Sold</div>
-        <div class="card-value amber" id="world-sold">—</div>
-        <div class="card-sub" id="world-sold-sub">into pool</div>
+        <div class="card-label">Fee Revenue (WORLD)</div>
+        <div class="card-value amber" id="world-fee">—</div>
+        <div class="card-sub" id="world-fee-sub">1% of sells</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Token Stats -->
+  <section>
+    <h2>Token Stats</h2>
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="card-label">Total Buys</div>
+        <div class="card-value green" id="ts-buys">—</div>
+        <div class="card-sub" id="ts-buys-sub">— ETH volume</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total Sells</div>
+        <div class="card-value red" id="ts-sells">—</div>
+        <div class="card-sub" id="ts-sells-sub">— WORLD volume</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Buy Volume</div>
+        <div class="card-value blue" id="ts-buy-vol">—</div>
+        <div class="card-sub" id="ts-buy-vol-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Sell Volume</div>
+        <div class="card-value purple" id="ts-sell-vol">—</div>
+        <div class="card-sub" id="ts-sell-vol-usd">$—</div>
       </div>
     </div>
   </section>
@@ -252,7 +279,7 @@
         <thead>
           <tr>
             <th>Continent</th>
-            <th class="right">Total Glazes</th>
+            <th class="right">Total Conquers</th>
             <th class="right">Avg Hold Time</th>
             <th class="right">Avg Entry Decay %</th>
             <th class="right">Avg Price Paid</th>
@@ -378,7 +405,7 @@
       </div>
     </div>
 
-    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Glaze Fee Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0">(15% per glaze · post-genesis)</span></h3>
+    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Conquer Fee Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0">(15% per conquer · post-genesis)</span></h3>
     <div class="grid grid-4">
       <div class="card">
         <div class="card-label">To LP Wallet (12%)</div>
@@ -493,7 +520,7 @@
       <div class="card">
         <div class="card-label">Total ETH Distributed</div>
         <div class="card-value purple" id="total-distributed">—</div>
-        <div class="card-sub" id="total-distributed-sub">est. (2% of glaze vol)</div>
+        <div class="card-sub" id="total-distributed-sub">est. (2% of conquer vol)</div>
       </div>
     </div>
   </section>
@@ -731,12 +758,23 @@ function decodeGlazeLog(log) {
   }
 }
 
+function decodeSignedInt256(hex) {
+  const n = BigInt('0x' + hex)
+  const SIGN_BIT = 1n << 255n
+  const TWO_POW_256 = 1n << 256n
+  return (n & SIGN_BIT) ? n - TWO_POW_256 : n
+}
+
 function decodeSwapLog(log) {
   // data: amount0 (int256) + amount1 (int256) + sqrtPriceX96 (uint160) + liquidity (uint128) + tick (int24)
   const data = log.data.replace(/^0x/, '')
+  const amount0 = decodeSignedInt256(data.slice(0, 64))
+  const amount1 = decodeSignedInt256(data.slice(64, 128))
   const sqrtPriceX96 = BigInt('0x' + data.slice(128, 192))
   return {
     block: parseInt(log.blockNumber, 16),
+    amount0,
+    amount1,
     sqrtPriceX96,
     txHash: log.transactionHash,
   }
@@ -1111,6 +1149,34 @@ function renderBotPerformanceTable() {
   })
 }
 
+function renderTokenStats(tokenPrice) {
+  // Determine buys vs sells from signed Swap amounts.
+  // If token0 = WORLD: amount0 > 0 means WORLD flowing INTO pool → sell; amount0 < 0 → buy
+  // If token0 = WETH:  amount1 > 0 means WORLD flowing INTO pool → sell; amount1 < 0 → buy
+  const buys = swapCache.filter(s => token0IsWorld ? s.amount0 < 0n : s.amount1 < 0n)
+  const sells = swapCache.filter(s => token0IsWorld ? s.amount0 > 0n : s.amount1 > 0n)
+
+  // Buy volume in ETH = ETH flowing into pool (positive side of WETH amount)
+  const buyVolEth = buys.reduce((acc, s) => {
+    const ethAmt = token0IsWorld ? s.amount1 : s.amount0 // WETH side, positive on buy
+    return acc + Math.abs(Number(ethAmt) / 1e18)
+  }, 0)
+  // Sell volume in WORLD = WORLD flowing into pool (positive side of WORLD amount)
+  const sellVolWorld = sells.reduce((acc, s) => {
+    const worldAmt = token0IsWorld ? s.amount0 : s.amount1 // WORLD side, positive on sell
+    return acc + Math.abs(Number(worldAmt) / 1e18)
+  }, 0)
+
+  setText('ts-buys', buys.length.toString())
+  setText('ts-buys-sub', fmtETH(buyVolEth, 4) + ' ETH volume')
+  setText('ts-sells', sells.length.toString())
+  setText('ts-sells-sub', fmtNum(sellVolWorld) + ' WORLD volume')
+  setText('ts-buy-vol', fmtETH(buyVolEth, 5) + ' ETH')
+  setText('ts-buy-vol-usd', fmtUSD(buyVolEth * ETH_USD))
+  setText('ts-sell-vol', fmtNum(sellVolWorld) + ' WORLD')
+  setText('ts-sell-vol-usd', fmtUSD(sellVolWorld * tokenPrice * ETH_USD))
+}
+
 function renderTokenFeeAnalytics(args) {
   const {
     wethR, worldR, tokenPrice, uptimeSec,
@@ -1236,7 +1302,7 @@ function renderTokenFeeAnalytics(args) {
 
   const fdRows = [
     {
-      flow: 'Glaze → LP',
+      flow: 'Conquer → LP',
       recipient: 'lpWallet',
       rate: '12%',
       est: fmtETH(glazeLP, 5) + ' ETH',
@@ -1244,7 +1310,7 @@ function renderTokenFeeAnalytics(args) {
       match: lpMatchOk ? okBadge : warnBadge(lpDelta),
     },
     {
-      flow: 'Glaze → Staking',
+      flow: 'Conquer → Staking',
       recipient: 'staking contract',
       rate: '2%',
       est: fmtETH(glazeStaking, 5) + ' ETH',
@@ -1252,7 +1318,7 @@ function renderTokenFeeAnalytics(args) {
       match: stakingMatchOk ? okBadge : warnBadge(stakingDelta),
     },
     {
-      flow: 'Glaze → Dev',
+      flow: 'Conquer → Dev',
       recipient: 'devWallet',
       rate: '1%',
       est: fmtETH(glazeDev, 5) + ' ETH',
@@ -1416,10 +1482,11 @@ async function refresh() {
   setText('fee-revenue', (feeRevenue >= 0 ? '+' : '') + fmtETH(feeRevenue, 6) + ' ETH')
   setText('fee-revenue-sub', fmtUSD(feeRevenue * ETH_USD) + ' · since deploy')
 
-  // Net WORLD sold to pool = current - initial (positive = sells > buys)
-  const worldSold = worldR - DEPLOY_WORLD
-  setText('world-sold', (worldSold >= 0 ? '+' : '') + fmtNum(worldSold))
-  setText('world-sold-sub', fmtUSD(worldSold * tokenPrice * ETH_USD) + ' · into pool')
+  // Fee Revenue (WORLD): proxy = (worldR - DEPLOY_WORLD) × 0.01
+  // ~99% of WORLD added to pool came from sells; 1% pool fee accrues to LPs
+  const worldFeeEst = Math.max(0, worldR - DEPLOY_WORLD) * 0.01
+  setText('world-fee', fmtNum(worldFeeEst) + ' WORLD')
+  setText('world-fee-sub', fmtUSD(worldFeeEst * tokenPrice * ETH_USD) + ' · 1% of sells')
 
   // Mining
   const totalMinted = fmtWei(stats[0])
@@ -1466,6 +1533,9 @@ async function refresh() {
 
   // Render protocol overview from event cache
   renderProtocolOverviewFromGlazes()
+
+  // Token Stats (buys/sells from swap cache)
+  renderTokenStats(tokenPrice)
 
   // Per-continent + bot performance tables
   renderContinentTable()
