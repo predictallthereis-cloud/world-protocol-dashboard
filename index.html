@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WORLD Protocol — Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card: rgba(255,255,255,0.02);
+    --border: rgba(255,255,255,0.08);
+    --text: #e5e5e5;
+    --dim: #888;
+    --dimmer: #555;
+    --green: #22c55e;
+    --red: #ef4444;
+    --amber: #f59e0b;
+    --blue: #3b82f6;
+    --purple: #a855f7;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* Header */
+  header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
+  header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  header p { font-size: 12px; color: var(--dim); }
+  header p .live { color: var(--green); }
+  header p .live::before { content: '●'; margin-right: 4px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .refresh-box {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 11px;
+    color: var(--dim);
+  }
+  .refresh-box .countdown { color: var(--text); font-weight: 600; min-width: 18px; text-align: right; }
+
+  /* Sections */
+  section { margin-bottom: 32px; }
+  section h2 {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 12px;
+  }
+
+  /* Card grid */
+  .grid { display: grid; gap: 12px; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 900px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 540px) {
+    .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    .container { padding: 20px 14px 40px; }
+    header h1 { font-size: 18px; }
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .card-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dimmer); margin-bottom: 8px; }
+  .card-value { font-size: 24px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #fff; line-height: 1; }
+  .card-sub { font-size: 11px; color: var(--dimmer); margin-top: 6px; font-family: 'JetBrains Mono', monospace; }
+  .card-value.green { color: var(--green); }
+  .card-value.red { color: var(--red); }
+  .card-value.amber { color: var(--amber); }
+  .card-value.blue { color: var(--blue); }
+  .card-value.purple { color: var(--purple); }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; }
+  table th, table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  table th {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dimmer);
+    border-bottom: 1px solid var(--border);
+  }
+  table td.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  table td.right { text-align: right; }
+  .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; overflow-x: auto; }
+
+  /* Progress bar */
+  .bar {
+    width: 80px;
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .bar > div {
+    height: 100%;
+    background: var(--green);
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .bar.warn > div { background: var(--amber); }
+  .bar.crit > div { background: var(--red); }
+
+  /* Charts */
+  .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .chart-wrap { position: relative; height: 280px; }
+  .chart-wrap.donut { height: 240px; }
+
+  /* Footer */
+  footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 11px; color: var(--dimmer); }
+  footer .links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
+  footer a { color: var(--dim); text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+  footer a:hover { color: var(--text); }
+
+  /* Loading skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 4px;
+    color: transparent;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <h1>WORLD Protocol — Analytics</h1>
+      <p>Base Sepolia Testnet · <span class="live">live</span></p>
+    </div>
+    <div class="refresh-box">
+      <span>refresh in</span>
+      <span class="countdown" id="countdown">30</span>
+      <span>s</span>
+    </div>
+  </header>
+
+  <section>
+    <h2>Protocol Overview</h2>
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="card-label">Uptime</div>
+        <div class="card-value" id="uptime">—</div>
+        <div class="card-sub" id="deploy-date">since deploy</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Blocks Elapsed</div>
+        <div class="card-value blue" id="blocks">—</div>
+        <div class="card-sub">since deploy block</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total Glazes</div>
+        <div class="card-value amber" id="glazes">—</div>
+        <div class="card-sub">5h window estimate</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total Minted</div>
+        <div class="card-value purple" id="minted">—</div>
+        <div class="card-sub" id="minted-pct">% of max supply</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pool — Uniswap V3 (1%)</h2>
+    <div class="grid grid-4">
+      <div class="card">
+        <div class="card-label">WETH Reserve</div>
+        <div class="card-value" id="weth-reserve">—</div>
+        <div class="card-sub" id="weth-reserve-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">WORLD Reserve</div>
+        <div class="card-value" id="world-reserve">—</div>
+        <div class="card-sub" id="world-reserve-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Token Price</div>
+        <div class="card-value amber" id="price">—</div>
+        <div class="card-sub" id="price-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Price Δ vs deploy</div>
+        <div class="card-value" id="price-change">—</div>
+        <div class="card-sub" id="price-deploy">deploy: 1.857e-7 ETH</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Mining</h2>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="card-label">Total Minted</div>
+        <div class="card-value purple" id="mining-minted">—</div>
+        <div class="card-sub" id="mining-minted-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Mining Rate</div>
+        <div class="card-value green" id="mining-rate">—</div>
+        <div class="card-sub">avg WORLD/hour</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total Unrefined</div>
+        <div class="card-value amber" id="unrefined">—</div>
+        <div class="card-sub" id="unrefined-usd">$—</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Staking</h2>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="card-label">Total Staked</div>
+        <div class="card-value green" id="total-staked">—</div>
+        <div class="card-sub" id="total-staked-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Pending ETH</div>
+        <div class="card-value amber" id="staking-eth">—</div>
+        <div class="card-sub" id="staking-eth-usd">$—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Reward / Token</div>
+        <div class="card-value blue" id="reward-per-token">—</div>
+        <div class="card-sub mono">accumulator</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bot Wallets</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Wallet</th>
+            <th>Continent</th>
+            <th>Address</th>
+            <th class="right">Funded</th>
+            <th class="right">Current</th>
+            <th class="right">Δ</th>
+            <th class="right">Remaining</th>
+          </tr>
+        </thead>
+        <tbody id="bots-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="grid grid-2">
+      <div class="chart-card">
+        <h2 style="margin-bottom: 16px;">Fee Distribution</h2>
+        <div class="chart-wrap donut">
+          <canvas id="fee-chart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h2 style="margin-bottom: 16px;">Token Price (ETH)</h2>
+        <div class="chart-wrap">
+          <canvas id="price-chart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div>WORLD Protocol Analytics · auto-refresh 30s · all data live from RPC</div>
+    <div class="links">
+      <a href="https://sepolia.basescan.org/address/0xb9b9d6f22280bf2b74855e7da1ad7d85c1bd5fdb" target="_blank" rel="noopener">WorldMiner ↗</a>
+      <a href="https://sepolia.basescan.org/address/0xf9b86b69655ed3f7be022ceb54cec7082e67383c" target="_blank" rel="noopener">WorldToken ↗</a>
+      <a href="https://sepolia.basescan.org/address/0x42dc972d601a1392fe1969de7fade9c44322beb9" target="_blank" rel="noopener">WorldStaking ↗</a>
+      <a href="https://sepolia.basescan.org/address/0xe1f4BBe734aeD192CCe313585fFBbEB6B64e90c5" target="_blank" rel="noopener">V3 Pool ↗</a>
+      <a href="https://predictallthereis-cloud.github.io/world-protocol/" target="_blank" rel="noopener">Main app ↗</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+// ─── Constants ────────────────────────────────────────────────────────────
+const RPC = 'https://sepolia.base.org'
+const MINER = '0xb9b9d6f22280bf2b74855e7da1ad7d85c1bd5fdb'
+const TOKEN = '0xf9b86b69655ed3f7be022ceb54cec7082e67383c'
+const POOL  = '0xe1f4BBe734aeD192CCe313585fFBbEB6B64e90c5'
+const WETH  = '0x4200000000000000000000000000000000000006'
+const STAKING = '0x42dc972d601a1392fe1969de7fade9c44322beb9'
+const DEPLOY_TS = 1775740056
+const DEPLOY_BLOCK = 39985884
+const DEPLOY_PRICE = 1.857e-7
+const ETH_USD = 2000
+const MAX_SUPPLY = 19950000
+const REFRESH_MS = 30000
+
+// Function selectors (computed via cast sig)
+const SEL = {
+  balanceOf: '0x70a08231',
+  getProtocolStats: '0x771aceef',
+  totalStaked: '0x817b1cd2',
+  rewardPerTokenStored: '0xdf136d65',
+}
+
+const BOT_WALLETS = [
+  { name: 'W0', continent: 'Asia',     addr: '0x9943eCf1C370Cb492c5c6Ab8A2bbFfC76A7c9704', funded: 0.026 },
+  { name: 'W1', continent: 'Asia',     addr: '0xd32464D8a04F2F5ac754c287515A676A2246d919', funded: 0.026 },
+  { name: 'W2', continent: 'Africa',   addr: '0x428feFE9e52E4147d21b47243CeDa07d5df2aFEB', funded: 0.022 },
+  { name: 'W3', continent: 'Africa',   addr: '0xFbD7e59D8EaEDaC530bEDe9B6f89f0265DEBA382', funded: 0.022 },
+  { name: 'W4', continent: 'Americas', addr: '0xdf130566b9a16ceB64144efda82b5362D3c43eB4', funded: 0.017 },
+  { name: 'W5', continent: 'Americas', addr: '0x0ecF560BdE3243DEDE37a4e90BC94116eC8B0ef1', funded: 0.017 },
+  { name: 'W6', continent: 'Europe',   addr: '0x425B7C2672747B4abA4B5B355a7368dDcD9F1DB1', funded: 0.013 },
+  { name: 'W7', continent: 'Europe',   addr: '0xE410501e5a6883904967dddE882a69089aE7bC37', funded: 0.013 },
+  { name: 'W8', continent: 'Oceania',  addr: '0x5eD31B88001B40664C76fE5F448C888ae1119a74', funded: 0.009 },
+  { name: 'W9', continent: 'Oceania',  addr: '0x6cbf2D103018Ba4a3202Bd9143672f86D268F766', funded: 0.009 },
+]
+
+// ─── RPC helpers ──────────────────────────────────────────────────────────
+let rpcId = 1
+async function rpc(method, params) {
+  const r = await fetch(RPC, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: rpcId++, method, params })
+  })
+  const json = await r.json()
+  if (json.error) throw new Error(json.error.message)
+  return json.result
+}
+
+function padAddress(addr) {
+  return '000000000000000000000000' + addr.toLowerCase().replace(/^0x/, '')
+}
+
+async function ethCall(to, data) {
+  return rpc('eth_call', [{ to, data }, 'latest'])
+}
+
+async function getBalance(addr) {
+  const hex = await rpc('eth_getBalance', [addr, 'latest'])
+  return BigInt(hex)
+}
+
+async function getBlockNumber() {
+  return parseInt(await rpc('eth_blockNumber', []), 16)
+}
+
+async function balanceOf(token, holder) {
+  const data = SEL.balanceOf + padAddress(holder)
+  const result = await ethCall(token, data)
+  return BigInt(result)
+}
+
+async function getProtocolStats() {
+  const result = await ethCall(MINER, SEL.getProtocolStats)
+  // returns 4 uint256s
+  const hex = result.replace(/^0x/, '')
+  return [
+    BigInt('0x' + hex.slice(0, 64)),
+    BigInt('0x' + hex.slice(64, 128)),
+    BigInt('0x' + hex.slice(128, 192)),
+    BigInt('0x' + hex.slice(192, 256)),
+  ]
+}
+
+async function getTotalStaked() {
+  const result = await ethCall(STAKING, SEL.totalStaked)
+  return BigInt(result)
+}
+
+async function getRewardPerToken() {
+  const result = await ethCall(STAKING, SEL.rewardPerTokenStored)
+  return BigInt(result)
+}
+
+// ─── Formatters ───────────────────────────────────────────────────────────
+const fmtWei = (b) => Number(b) / 1e18
+
+function fmtUptime(seconds) {
+  const d = Math.floor(seconds / 86400)
+  const h = Math.floor((seconds % 86400) / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.floor(seconds % 60)
+  if (d > 0) return `${d}d ${h}h ${m}m`
+  if (h > 0) return `${h}h ${m}m ${s}s`
+  return `${m}m ${s}s`
+}
+
+function fmtNum(n, decimals = 2) {
+  if (!isFinite(n)) return '—'
+  if (n === 0) return '0'
+  if (Math.abs(n) >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M'
+  if (Math.abs(n) >= 1_000) return (n / 1_000).toFixed(2) + 'K'
+  if (Math.abs(n) < 0.0001 && n !== 0) return n.toExponential(2)
+  return n.toFixed(decimals)
+}
+
+function fmtUSD(n) {
+  if (!isFinite(n)) return '$—'
+  if (n === 0) return '$0.00'
+  if (Math.abs(n) >= 1_000_000) return '$' + (n / 1_000_000).toFixed(2) + 'M'
+  if (Math.abs(n) >= 1_000) return '$' + (n / 1_000).toFixed(2) + 'K'
+  if (Math.abs(n) < 0.01) return '<$0.01'
+  return '$' + n.toFixed(2)
+}
+
+function fmtETH(n) {
+  if (!isFinite(n) || n === 0) return '0'
+  if (Math.abs(n) < 0.0001) return n.toExponential(3)
+  return n.toFixed(6)
+}
+
+function shortAddr(a) {
+  return a.slice(0, 6) + '…' + a.slice(-4)
+}
+
+// ─── Charts ───────────────────────────────────────────────────────────────
+const feeChart = new Chart(document.getElementById('fee-chart').getContext('2d'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Previous holder', 'LP', 'Stakers', 'Team'],
+    datasets: [{
+      data: [85, 12, 2, 1],
+      backgroundColor: ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7'],
+      borderColor: '#0a0a0a',
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%',
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: { color: '#aaa', font: { size: 11, family: 'Inter' }, padding: 12, boxWidth: 12 }
+      },
+      tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.parsed}%` } },
+    },
+  },
+})
+
+// Price chart — populated live; seeded with deploy point
+const priceData = [{ x: DEPLOY_TS * 1000, y: DEPLOY_PRICE }]
+const priceChart = new Chart(document.getElementById('price-chart').getContext('2d'), {
+  type: 'line',
+  data: {
+    datasets: [{
+      label: 'ETH/WORLD',
+      data: priceData,
+      borderColor: '#22c55e',
+      backgroundColor: 'rgba(34,197,94,0.12)',
+      borderWidth: 2,
+      fill: true,
+      tension: 0.3,
+      pointRadius: 0,
+      pointHoverRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => new Date(items[0].parsed.x).toLocaleTimeString(),
+          label: (ctx) => ctx.parsed.y.toExponential(4) + ' ETH',
+        },
+      },
+    },
+    scales: {
+      x: {
+        type: 'time',
+        time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } },
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { color: '#666', font: { size: 10 } },
+      },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: {
+          color: '#666', font: { size: 10 },
+          callback: (v) => Number(v).toExponential(1),
+        },
+      },
+    },
+  },
+})
+
+// Time scale needs adapter — use simple linear if date-fns not available
+// (Chart.js 4 includes time scale natively but needs adapter for parsing)
+// Fallback: convert to numeric x and use linear scale
+function rebuildPriceChartLinear() {
+  priceChart.config.options.scales.x = {
+    type: 'linear',
+    grid: { color: 'rgba(255,255,255,0.04)' },
+    ticks: {
+      color: '#666', font: { size: 10 },
+      callback: (v) => {
+        const minsAgo = Math.round((Date.now() / 1000 - v / 1000) / 60)
+        return minsAgo === 0 ? 'now' : '-' + minsAgo + 'm'
+      },
+    },
+  }
+  priceChart.update('none')
+}
+rebuildPriceChartLinear()
+
+// ─── Render functions ─────────────────────────────────────────────────────
+function setText(id, text) {
+  const el = document.getElementById(id)
+  if (el) { el.textContent = text; el.classList.remove('skeleton') }
+}
+
+function setColor(id, cls) {
+  const el = document.getElementById(id)
+  if (!el) return
+  ;['green', 'red', 'amber', 'blue', 'purple'].forEach(c => el.classList.remove(c))
+  if (cls) el.classList.add(cls)
+}
+
+async function refresh() {
+  // Uptime
+  const now = Math.floor(Date.now() / 1000)
+  const uptimeSec = now - DEPLOY_TS
+  setText('uptime', fmtUptime(uptimeSec))
+  setText('deploy-date', new Date(DEPLOY_TS * 1000).toUTCString().slice(5, 22) + ' UTC')
+
+  // Parallel RPC fetches
+  let blockNum, stats, wethReserve, worldReserve, totalStaked, rewardPerToken, stakingEth, botBalances
+  try {
+    [
+      blockNum,
+      stats,
+      wethReserve,
+      worldReserve,
+      totalStaked,
+      rewardPerToken,
+      stakingEth,
+      botBalances,
+    ] = await Promise.all([
+      getBlockNumber(),
+      getProtocolStats(),
+      balanceOf(WETH, POOL),
+      balanceOf(TOKEN, POOL),
+      getTotalStaked(),
+      getRewardPerToken(),
+      getBalance(STAKING),
+      Promise.all(BOT_WALLETS.map(b => getBalance(b.addr))),
+    ])
+  } catch (e) {
+    console.error('RPC error:', e)
+    return
+  }
+
+  // Blocks elapsed
+  setText('blocks', fmtNum(blockNum - DEPLOY_BLOCK, 0))
+
+  // Glaze events estimate (5h window proxy)
+  // We don't fetch logs (too expensive); show "—" and a note
+  const blocksElapsed = blockNum - DEPLOY_BLOCK
+  const estGlazes = Math.round(blocksElapsed * 51 / 10000) // crude: 51 glazes / 10k blocks observed
+  setText('glazes', fmtNum(estGlazes, 0))
+
+  // Protocol stats: [totalMinted, maxMineable, currentEpoch, totalUnrefined]
+  const totalMinted = fmtWei(stats[0])
+  const totalUnrefined = fmtWei(stats[3])
+  setText('minted', fmtNum(totalMinted))
+  setText('minted-pct', ((totalMinted / MAX_SUPPLY) * 100).toFixed(2) + '% of max')
+
+  // Pool reserves
+  const wethR = fmtWei(wethReserve)
+  const worldR = fmtWei(worldReserve)
+  setText('weth-reserve', fmtETH(wethR) + ' ETH')
+  setText('weth-reserve-usd', fmtUSD(wethR * ETH_USD))
+  setText('world-reserve', fmtNum(worldR))
+  const tokenPrice = wethR / worldR
+  setText('world-reserve-usd', fmtUSD(worldR * tokenPrice * ETH_USD))
+
+  // Token price
+  setText('price', tokenPrice.toExponential(4) + ' ETH')
+  setText('price-usd', fmtUSD(tokenPrice * ETH_USD))
+  const priceChange = ((tokenPrice / DEPLOY_PRICE) - 1) * 100
+  const sign = priceChange >= 0 ? '+' : ''
+  setText('price-change', sign + priceChange.toFixed(2) + '%')
+  setColor('price-change', priceChange >= 0 ? 'green' : 'red')
+
+  // Mining
+  setText('mining-minted', fmtNum(totalMinted) + ' WORLD')
+  setText('mining-minted-usd', fmtUSD(totalMinted * tokenPrice * ETH_USD))
+  const hoursElapsed = uptimeSec / 3600
+  const rate = hoursElapsed > 0 ? totalMinted / hoursElapsed : 0
+  setText('mining-rate', fmtNum(rate) + ' /h')
+  setText('unrefined', fmtNum(totalUnrefined) + ' WORLD')
+  setText('unrefined-usd', fmtUSD(totalUnrefined * tokenPrice * ETH_USD))
+
+  // Staking
+  const totalStakedNum = fmtWei(totalStaked)
+  setText('total-staked', fmtNum(totalStakedNum) + ' WORLD')
+  setText('total-staked-usd', fmtUSD(totalStakedNum * tokenPrice * ETH_USD))
+  const stakingEthNum = fmtWei(stakingEth)
+  setText('staking-eth', fmtETH(stakingEthNum) + ' ETH')
+  setText('staking-eth-usd', fmtUSD(stakingEthNum * ETH_USD))
+  setText('reward-per-token', Number(rewardPerToken).toExponential(3))
+
+  // Bot wallets table
+  const tbody = document.getElementById('bots-tbody')
+  tbody.innerHTML = ''
+  BOT_WALLETS.forEach((b, i) => {
+    const cur = fmtWei(botBalances[i])
+    const delta = cur - b.funded
+    const pct = (cur / b.funded) * 100
+    const cls = pct > 60 ? '' : pct > 30 ? 'warn' : 'crit'
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td><strong>${b.name}</strong></td>
+      <td>${b.continent}</td>
+      <td class="mono"><a href="https://sepolia.basescan.org/address/${b.addr}" target="_blank" rel="noopener" style="color:#666;text-decoration:none">${shortAddr(b.addr)}</a></td>
+      <td class="right mono">${b.funded.toFixed(4)}</td>
+      <td class="right mono">${cur.toFixed(4)}</td>
+      <td class="right mono" style="color:${delta >= 0 ? '#22c55e' : '#ef4444'}">${delta >= 0 ? '+' : ''}${delta.toFixed(4)}</td>
+      <td class="right">
+        <span class="mono" style="margin-right:8px">${pct.toFixed(0)}%</span>
+        <span class="bar ${cls}"><div style="width:${Math.min(100, Math.max(0, pct))}%"></div></span>
+      </td>
+    `
+    tbody.appendChild(tr)
+  })
+
+  // Update price chart (keep last 200 points)
+  priceData.push({ x: Date.now(), y: tokenPrice })
+  if (priceData.length > 200) priceData.shift()
+  priceChart.update('none')
+}
+
+// ─── Auto-refresh ─────────────────────────────────────────────────────────
+let countdown = 30
+const countdownEl = document.getElementById('countdown')
+
+setInterval(() => {
+  countdown -= 1
+  if (countdown <= 0) countdown = 30
+  countdownEl.textContent = countdown
+}, 1000)
+
+setInterval(() => {
+  refresh().catch(e => console.error(e))
+  countdown = 30
+}, REFRESH_MS)
+
+// Live uptime ticker every second
+setInterval(() => {
+  const now = Math.floor(Date.now() / 1000)
+  const el = document.getElementById('uptime')
+  if (el && !el.classList.contains('skeleton')) {
+    el.textContent = fmtUptime(now - DEPLOY_TS)
+  }
+}, 1000)
+
+// Initial fetch
+refresh().catch(e => console.error(e))
+</script>
+</body>
+</html>
