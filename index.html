@@ -101,6 +101,7 @@
   table td.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
   table td.right { text-align: right; }
   tbody tr:hover { background: var(--card-hover); }
+  tfoot td { border-top: 1px solid rgba(255,255,255,0.12); font-weight: 600; padding: 10px 12px; font-size: 12px; }
   .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; overflow-x: auto; }
 
   .bar { width: 80px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; display: inline-block; vertical-align: middle; }
@@ -545,6 +546,56 @@
         </thead>
         <tbody id="bots-tbody"></tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- Team P&L -->
+  <section>
+    <h2>Team P&amp;L</h2>
+
+    <!-- Toggle ETH/WORLD view -->
+    <div class="timeframe-buttons" id="pnl-toggle" style="margin-bottom:20px;display:inline-flex">
+      <button data-view="eth" class="active">ETH only</button>
+      <button data-view="world">+ WORLD (minted free)</button>
+      <button data-view="worldmarket">+ WORLD (at market cost)</button>
+    </div>
+
+    <!-- Main P&L number -->
+    <div style="margin-bottom:24px">
+      <div class="card" style="display:inline-block;min-width:280px;padding:20px 28px">
+        <div class="card-label">Net P&amp;L</div>
+        <div style="font-size:36px;font-weight:700;font-family:'JetBrains Mono',monospace" id="pnl-main">—</div>
+        <div style="margin-top:6px;display:flex;gap:16px;align-items:center">
+          <span id="pnl-pct" style="font-family:'JetBrains Mono',monospace;font-size:14px">—</span>
+          <span id="pnl-eth-val" style="font-size:11px;color:var(--dimmer)">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invested vs Current -->
+    <div class="grid grid-2" style="margin-bottom:20px">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th colspan="3">Invested (outflows)</th></tr></thead>
+          <tbody id="pnl-invested-tbody"></tbody>
+          <tfoot><tr>
+            <td><strong>Total</strong></td>
+            <td class="right mono" id="pnl-invest-eth">—</td>
+            <td class="right mono" id="pnl-invest-usd">—</td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th colspan="3">Current assets (inflows)</th></tr></thead>
+          <tbody id="pnl-assets-tbody"></tbody>
+          <tfoot><tr>
+            <td><strong>Total</strong></td>
+            <td class="right mono" id="pnl-assets-eth">—</td>
+            <td class="right mono" id="pnl-assets-usd">—</td>
+          </tr></tfoot>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -1152,6 +1203,106 @@ function renderBotPerformanceTable() {
   })
 }
 
+function renderTeamPnL({ wethR, worldR, tokenPrice, devStaked, devEarned,
+                         botBalances, lpWalletEth, devWalletEth,
+                         feeETHreal, feeWORLDreal }) {
+  const ethUsd = ETH_USD
+  const worldUsd = tokenPrice * ethUsd
+
+  // ── INVESTED ──
+  const inv_pool_eth = 0.195
+  const inv_bots_eth = 0.174
+  const inv_world = DEPLOY_WORLD // minted, ETH cost = 0
+  const inv_eth_total = inv_pool_eth + inv_bots_eth // 0.369
+
+  // ── CURRENT ETH ASSETS (no double counting) ──
+  const totalBotEth = botBalances.reduce((a, b) => a + fmtWei(b), 0)
+  const devPending = fmtWei(devEarned)
+  const lpEth = fmtWei(lpWalletEth)
+  const devEth = fmtWei(devWalletEth)
+  // wethR already includes fee ETH (feeETHreal is a subset of wethR)
+  const ethAssets = wethR + totalBotEth + lpEth + devEth + devPending
+
+  // ── CURRENT WORLD ASSETS ──
+  // worldR already includes fee WORLD
+  const worldAssets = worldR + fmtWei(devStaked)
+
+  // ── 3 VIEWS ──
+  const views = {
+    eth: {
+      investUsd: inv_eth_total * ethUsd,
+      totalUsd: ethAssets * ethUsd,
+      label: 'ETH only · WORLD not counted',
+    },
+    world: {
+      // WORLD cost basis = 0 (minted for free)
+      investUsd: inv_eth_total * ethUsd,
+      totalUsd: ethAssets * ethUsd + worldAssets * worldUsd,
+      label: 'WORLD valued at market · cost basis $0 (minted)',
+    },
+    worldmarket: {
+      // WORLD cost basis = current market price (counterfactual)
+      investUsd: inv_eth_total * ethUsd + inv_world * worldUsd,
+      totalUsd: ethAssets * ethUsd + worldAssets * worldUsd,
+      label: 'WORLD valued at market on both sides',
+    },
+  }
+
+  const activeView = window.__pnlView || 'eth'
+  const v = views[activeView]
+  const pnl = v.totalUsd - v.investUsd
+  const pnlPct = v.investUsd > 0 ? (pnl / v.investUsd) * 100 : 0
+  const pnlEth = pnl / ethUsd
+
+  // Main P&L display
+  const mainEl = document.getElementById('pnl-main')
+  if (mainEl) {
+    mainEl.textContent = (pnl >= 0 ? '+' : '') + fmtUSD(pnl)
+    mainEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)'
+  }
+  setText('pnl-pct', (pnlPct >= 0 ? '+' : '') + pnlPct.toFixed(2) + '%')
+  const pctEl = document.getElementById('pnl-pct')
+  if (pctEl) pctEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)'
+  setText('pnl-eth-val', (pnlEth >= 0 ? '+' : '') + fmtETH(pnlEth, 5) + ' ETH · ' + v.label)
+
+  // Invested table
+  const investRows = [
+    ['Pool initial (ETH)', fmtETH(inv_pool_eth, 3) + ' ETH', fmtUSD(inv_pool_eth * ethUsd)],
+    ['Bot funding (ETH)', fmtETH(inv_bots_eth, 3) + ' ETH', fmtUSD(inv_bots_eth * ethUsd)],
+    ['WORLD initial (minted)', fmtNum(inv_world) + ' WORLD',
+      activeView === 'worldmarket' ? fmtUSD(inv_world * worldUsd) : '$0 · cost basis'],
+  ]
+  const iTbody = document.getElementById('pnl-invested-tbody')
+  if (iTbody) iTbody.innerHTML = investRows.map(([l, e, u]) =>
+    `<tr><td>${l}</td><td class="right mono">${e}</td><td class="right mono" style="color:var(--red)">${u}</td></tr>`
+  ).join('')
+  setText('pnl-invest-eth', fmtETH(inv_eth_total, 3) + ' ETH')
+  setText('pnl-invest-usd', fmtUSD(v.investUsd))
+
+  // Assets table
+  const assetRows = [
+    ['Pool position (ETH)', fmtETH(wethR, 5) + ' ETH', fmtUSD(wethR * ethUsd)],
+    ['  incl. fee ETH', fmtETH(feeETHreal, 5) + ' ETH', fmtUSD(feeETHreal * ethUsd)],
+    ['Pool position (WORLD)', fmtNum(worldR) + ' WORLD', fmtUSD(worldR * worldUsd)],
+    ['  incl. fee WORLD', fmtNum(feeWORLDreal) + ' WORLD', fmtUSD(feeWORLDreal * worldUsd)],
+    ['Bot wallets', fmtETH(totalBotEth, 5) + ' ETH', fmtUSD(totalBotEth * ethUsd)],
+    ['Dev wallet', fmtETH(devEth, 5) + ' ETH', fmtUSD(devEth * ethUsd)],
+    ['LP wallet', fmtETH(lpEth, 5) + ' ETH', fmtUSD(lpEth * ethUsd)],
+    ['Dev staking pending', fmtETH(devPending, 5) + ' ETH', fmtUSD(devPending * ethUsd)],
+    ['Dev WORLD staked', fmtNum(fmtWei(devStaked)) + ' WORLD', fmtUSD(fmtWei(devStaked) * worldUsd)],
+  ]
+  const aTbody = document.getElementById('pnl-assets-tbody')
+  if (aTbody) aTbody.innerHTML = assetRows.map(([l, e, u]) => {
+    const indent = l.startsWith(' ')
+    return `<tr><td style="color:${indent ? 'var(--dimmer)' : ''};padding-left:${indent ? '20px' : ''}">${l.trim()}</td><td class="right mono" style="color:${indent ? 'var(--dimmer)' : ''}">${e}</td><td class="right mono" style="color:var(--green)">${u}</td></tr>`
+  }).join('')
+  setText('pnl-assets-eth', fmtETH(ethAssets, 5) + ' ETH')
+  setText('pnl-assets-usd', fmtUSD(v.totalUsd))
+
+  // Store for toggle re-render
+  window.__pnlData = { wethR, worldR, tokenPrice, devStaked, devEarned, botBalances, lpWalletEth, devWalletEth, feeETHreal, feeWORLDreal }
+}
+
 function renderTokenStats(tokenPrice) {
   // Determine buys vs sells from signed Swap amounts.
   // If token0 = WORLD: amount0 > 0 means WORLD flowing INTO pool → sell; amount0 < 0 → buy
@@ -1518,7 +1669,7 @@ async function refresh() {
 
   // ─── Phase 2: events + staking + bots + dev/lock state in parallel ───
   let totalStaked, rewardPerToken, stakingEth, botBalances, continents
-  let totalLocked7d, totalLocked14d, devStaked, devEarned, devWorldFree, lpWalletEth
+  let totalLocked7d, totalLocked14d, devStaked, devEarned, devWorldFree, lpWalletEth, devWalletEth
   try {
     await Promise.all([
       refreshGlazeCache(blockNum),
@@ -1527,7 +1678,7 @@ async function refresh() {
     ])
     ;[
       totalStaked, rewardPerToken, stakingEth, botBalances, continents,
-      totalLocked7d, totalLocked14d, devStaked, devEarned, devWorldFree, lpWalletEth,
+      totalLocked7d, totalLocked14d, devStaked, devEarned, devWorldFree, lpWalletEth, devWalletEth,
     ] = await Promise.all([
       getTotalStaked(),
       getRewardPerToken(),
@@ -1540,6 +1691,7 @@ async function refresh() {
       ethCall(STAKING, SEL.earned + padAddress(DEV_WALLET)).then(r => BigInt(r)),
       balanceOf(TOKEN, DEV_WALLET),
       getBalance(LP_WALLET),
+      getBalance(DEV_WALLET),
     ])
   } catch (e) {
     console.error('Phase 2 error:', e)
@@ -1613,6 +1765,13 @@ async function refresh() {
     `
     tbody.appendChild(tr)
   })
+
+  // Team P&L — overall profit/loss across all team wallets + pool position
+  renderTeamPnL({
+    wethR, worldR, tokenPrice, devStaked, devEarned,
+    botBalances, lpWalletEth, devWalletEth,
+    feeETHreal, feeWORLDreal,
+  })
 }
 
 // ─── Timeframe button handler ─────────────────────────────────────────────
@@ -1622,6 +1781,17 @@ document.querySelectorAll('#tf-buttons button').forEach(btn => {
     btn.classList.add('active')
     activeTimeframe = btn.getAttribute('data-tf')
     updatePriceChart()
+  })
+})
+
+// ─── Team P&L view toggle ─────────────────────────────────────────────────
+window.__pnlView = 'eth'
+document.querySelectorAll('#pnl-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#pnl-toggle button').forEach(b => b.classList.remove('active'))
+    btn.classList.add('active')
+    window.__pnlView = btn.getAttribute('data-view')
+    if (window.__pnlData) renderTeamPnL(window.__pnlData)
   })
 })
 
