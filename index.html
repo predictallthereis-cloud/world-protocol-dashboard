@@ -595,6 +595,9 @@ const SEL = {
   totalLocked14d: '0x94f79fd6',
   stakedBalance: '0x60217267',
   earned: '0x008cc262',
+  feeGrowthGlobal0X128: '0xf3058399',
+  feeGrowthGlobal1X128: '0x46141319',
+  liquidity: '0x1a686502',
 }
 
 // Refine tax flow constants (REFINE_TAX_BPS=1000 → 10% of refined amount)
@@ -1445,14 +1448,21 @@ async function refresh() {
   setText('uptime', fmtUptime(uptimeSec))
   setText('deploy-date', new Date(DEPLOY_TS * 1000).toUTCString().slice(5, 22) + ' UTC')
 
-  // ─── Phase 1: core RPC (block + protocol stats + pool reserves) ───
+  // ─── Phase 1: core RPC (block + protocol stats + pool reserves + V3 fee growth) ───
   let blockNum, stats, wethReserve, worldReserve, tokenPrice
+  let feeGrowth0Result, feeGrowth1Result, liquidityResult
   try {
-    [blockNum, stats, wethReserve, worldReserve] = await Promise.all([
+    [
+      blockNum, stats, wethReserve, worldReserve,
+      feeGrowth0Result, feeGrowth1Result, liquidityResult,
+    ] = await Promise.all([
       getBlockNumber(),
       getProtocolStats(),
       balanceOf(WETH, POOL),
       balanceOf(TOKEN, POOL),
+      ethCall(POOL, SEL.feeGrowthGlobal0X128),
+      ethCall(POOL, SEL.feeGrowthGlobal1X128),
+      ethCall(POOL, SEL.liquidity),
     ])
   } catch (e) {
     console.error('Phase 1 error:', e)
@@ -1477,16 +1487,21 @@ async function refresh() {
   setText('world-reserve', fmtNum(worldR))
   setText('world-reserve-usd', fmtUSD(worldR * tokenPrice * ETH_USD))
 
-  // Fee revenue accumulated = current WETH - initial WETH
-  const feeRevenue = wethR - DEPLOY_WETH
-  setText('fee-revenue', (feeRevenue >= 0 ? '+' : '') + fmtETH(feeRevenue, 6) + ' ETH')
-  setText('fee-revenue-sub', fmtUSD(feeRevenue * ETH_USD) + ' · since deploy')
+  // V3 real fee accrual: feeGrowthGlobalNX128 × liquidity / 2^128 (per token)
+  const fg0 = BigInt(feeGrowth0Result)
+  const fg1 = BigInt(feeGrowth1Result)
+  const liq = BigInt(liquidityResult)
+  const fee0raw = liq > 0n ? Number((fg0 * liq) >> 128n) / 1e18 : 0
+  const fee1raw = liq > 0n ? Number((fg1 * liq) >> 128n) / 1e18 : 0
+  // token0IsWorld may still be null on first cycle (set in Phase 2 swap-cache fetch) — assume WETH=token0
+  const feeETHreal   = (token0IsWorld === true) ? fee1raw : fee0raw
+  const feeWORLDreal = (token0IsWorld === true) ? fee0raw : fee1raw
 
-  // Fee Revenue (WORLD): proxy = (worldR - DEPLOY_WORLD) × 0.01
-  // ~99% of WORLD added to pool came from sells; 1% pool fee accrues to LPs
-  const worldFeeEst = Math.max(0, worldR - DEPLOY_WORLD) * 0.01
-  setText('world-fee', fmtNum(worldFeeEst) + ' WORLD')
-  setText('world-fee-sub', fmtUSD(worldFeeEst * tokenPrice * ETH_USD) + ' · 1% of sells')
+  setText('fee-revenue', (feeETHreal >= 0 ? '+' : '') + fmtETH(feeETHreal, 6) + ' ETH')
+  setText('fee-revenue-sub', fmtUSD(feeETHreal * ETH_USD) + ' · since deploy')
+
+  setText('world-fee', fmtNum(feeWORLDreal) + ' WORLD')
+  setText('world-fee-sub', fmtUSD(feeWORLDreal * tokenPrice * ETH_USD) + ' · 1% of sells')
 
   // Mining
   const totalMinted = fmtWei(stats[0])
