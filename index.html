@@ -1431,32 +1431,44 @@ function renderTokenFeeAnalytics(args) {
 
   const noLockers = orphan7 && orphan14
 
-  // ── Glaze Fee Flow (post-genesis only) ──
-  const glazeLP      = glazeVol * GLAZE_LP_FRAC
-  const glazeStaking = glazeVol * GLAZE_STAKING_FRAC
-  const glazeDev     = glazeVol * GLAZE_DEV_FRAC
-  const glazeFeesTotal = glazeLP + glazeStaking + glazeDev
+  // ── Conquer Fee Flow — real values from events + on-chain balances ──
+  // Total fees = sum of (price - prevPayout) for all glazes
+  let totalFeesWei = 0n
+  for (const g of glazeCache) totalFeesWei += (g.price - g.prevPayout)
+  const totalFees = fmtWei(totalFeesWei)
 
-  setText('tfa-glaze-lp', fmtETH(glazeLP, 5) + ' ETH')
-  setText('tfa-glaze-lp-usd', fmtUSD(glazeLP * ETH_USD))
-  setText('tfa-glaze-staking', fmtETH(glazeStaking, 5) + ' ETH')
-  setText('tfa-glaze-staking-usd', fmtUSD(glazeStaking * ETH_USD))
-  setText('tfa-glaze-dev', fmtETH(glazeDev, 5) + ' ETH')
-  setText('tfa-glaze-dev-usd', fmtUSD(glazeDev * ETH_USD))
-  setText('tfa-glaze-total', fmtETH(glazeFeesTotal, 5) + ' ETH')
-  setText('tfa-glaze-total-usd', fmtUSD(glazeFeesTotal * ETH_USD))
-
-  // ── Fee Distribution Summary table ──
+  // Real on-chain balances for LP and staking
   const stakingEthNumForTable = fmtWei(BigInt(stakingEth || 0n))
+  const lpReceivedTotal = lpCurrentEth + lpUsedEth
   const devStakedWorldForTable = fmtWei(BigInt(devStaked || 0n))
 
-  // LP reconciliation: routed should equal (current + used)
-  const lpReceivedTotal = lpCurrentEth + lpUsedEth
+  // Dev fees = total fees minus what LP and staking received
+  const realDevFees = Math.max(0, totalFees - lpReceivedTotal - stakingEthNumForTable)
+
+  // Real percentages (for card labels)
+  const realLpPct = totalFees > 0 ? (lpReceivedTotal / totalFees * 100).toFixed(1) : '0'
+  const realStakingPct = totalFees > 0 ? (stakingEthNumForTable / totalFees * 100).toFixed(1) : '0'
+  const realDevPct = totalFees > 0 ? (realDevFees / totalFees * 100).toFixed(1) : '0'
+
+  setText('tfa-glaze-lp-label', 'To LP Wallet (' + realLpPct + '%)')
+  setText('tfa-glaze-staking-label', 'To Staking (' + realStakingPct + '%)')
+  setText('tfa-glaze-dev-label', 'To devWallet (' + realDevPct + '%)')
+
+  setText('tfa-glaze-lp', fmtETH(lpReceivedTotal, 5) + ' ETH')
+  setText('tfa-glaze-lp-usd', fmtUSD(lpReceivedTotal * ETH_USD))
+  setText('tfa-glaze-staking', fmtETH(stakingEthNumForTable, 5) + ' ETH')
+  setText('tfa-glaze-staking-usd', fmtUSD(stakingEthNumForTable * ETH_USD))
+  setText('tfa-glaze-dev', fmtETH(realDevFees, 5) + ' ETH')
+  setText('tfa-glaze-dev-usd', fmtUSD(realDevFees * ETH_USD))
+  setText('tfa-glaze-total', fmtETH(totalFees, 5) + ' ETH')
+  setText('tfa-glaze-total-usd', fmtUSD(totalFees * ETH_USD))
+
+  // ── Fee Distribution Summary table ──
+  // Reconciliation: compare on-chain totals vs event-derived totals
+  const glazeLP = glazeVol * GLAZE_LP_FRAC
+  const glazeStaking = glazeVol * GLAZE_STAKING_FRAC
   const lpDelta = Math.abs(glazeLP - lpReceivedTotal)
   const lpMatchOk = lpDelta < 0.001
-
-  // Staking reconciliation: routed should equal what's currently in the staking contract
-  // (staking distributes via accumulator, no withdraw possible — total ever sent ≈ balance)
   const stakingDelta = Math.abs(glazeStaking - stakingEthNumForTable)
   const stakingMatchOk = stakingDelta < 0.0005
 
