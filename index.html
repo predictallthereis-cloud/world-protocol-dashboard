@@ -681,6 +681,7 @@ const LP_WALLET  = '0x4fE13f891650933954De54C3971574aBd5eEcd13'
 const TOPIC_GLAZE   = '0xe012aff215c01cc9690123113c09287f9d62bf9e543970d9371e3247cecdd734'
 const TOPIC_SWAP    = '0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67'
 const TOPIC_REFINED = '0xe4b511e3f4d15fae8db8459b236992a496527b398f421ed29f6a3dd36f6f6e7a'
+const TOPIC_FEES_CHANGED = '0xe06a46af1c04656f68e4f75cbbb23baa176651c7f99930a378ef9f1616dc2b8c'
 
 const BOT_WALLETS = [
   { name: 'W0', continent: 'Asia',     addr: '0x9943eCf1C370Cb492c5c6Ab8A2bbFfC76A7c9704', funded: 0.026 },
@@ -705,6 +706,7 @@ let swapCache = []          // {block, ts, sqrtPriceX96 (BigInt), priceETH (numb
 let swapCacheLastBlock = DEPLOY_BLOCK - 1
 let refineCache = []        // {user, amount (BigInt), tax (BigInt), net (BigInt), block, ts}
 let refineCacheLastBlock = DEPLOY_BLOCK - 1
+let feeChangeCache = null   // [{block, lpBps, stakingBps, devBps}] — fetched once
 const blockTsCache = {}     // blockNumber -> unix timestamp
 let lastTokenPrice = DEPLOY_PRICE
 let activeTimeframe = 'ALL'
@@ -895,6 +897,58 @@ async function refreshRefineCache(currentBlock) {
   refineCache.push(...decoded)
   refineCache.sort((a, b) => a.block - b.block)
   refineCacheLastBlock = currentBlock
+}
+
+async function fetchFeeChangeHistory(currentBlock) {
+  if (feeChangeCache !== null) return // only fetch once
+  const logs = await fetchLogsChunked({
+    address: MINER,
+    topics: [TOPIC_FEES_CHANGED],
+  }, DEPLOY_BLOCK, currentBlock)
+  // FeesChanged(uint256 lpFeeBps, uint256 stakingFeeBps, uint256 devFeeBps)
+  // data: 3 × uint256 (non-indexed)
+  const changes = logs.map(log => {
+    const data = log.data.replace(/^0x/, '')
+    return {
+      block: parseInt(log.blockNumber, 16),
+      lpBps: parseInt(data.slice(0, 64), 16),
+      stakingBps: parseInt(data.slice(64, 128), 16),
+      devBps: parseInt(data.slice(128, 192), 16),
+    }
+  })
+  changes.sort((a, b) => a.block - b.block)
+  // Prepend the deploy-time defaults (before any FeesChanged event)
+  feeChangeCache = [{ block: 0, lpBps: 1200, stakingBps: 200, devBps: 100 }, ...changes]
+}
+
+// For a given block, return the fee bps active at that block
+function getFeeBpsAtBlock(block) {
+  let active = feeChangeCache[0]
+  for (const fc of feeChangeCache) {
+    if (fc.block <= block) active = fc
+    else break
+  }
+  return active
+}
+
+// Calculate per-glaze fee totals using historical fee settings
+function computeHistoricalGlazeFees() {
+  let lpTotal = 0, stakingTotal = 0, devTotal = 0
+  for (const g of glazeCache) {
+    const fees = g.price - g.prevPayout
+    if (fees <= 0n) continue
+    const feesNum = Number(fees) / 1e18
+    const bps = getFeeBpsAtBlock(g.block)
+    // price = holderPayout + lpFee + stakingFee + devFee
+    // feesNum = lpFee + stakingFee + devFee
+    // Each fee = (price * bps) / 10000, so ratio within fees = bps / totalFeeBps
+    const totalFeeBps = bps.lpBps + bps.stakingBps + bps.devBps
+    if (totalFeeBps === 0) continue
+    lpTotal += feesNum * bps.lpBps / totalFeeBps
+    stakingTotal += feesNum * bps.stakingBps / totalFeeBps
+    devTotal += feesNum * bps.devBps / totalFeeBps
+  }
+  return { lpTotal, stakingTotal, devTotal, total: lpTotal + stakingTotal + devTotal }
 }
 
 async function refreshSwapCache(currentBlock) {
@@ -1431,42 +1485,37 @@ function renderTokenFeeAnalytics(args) {
 
   const noLockers = orphan7 && orphan14
 
-  // ── Conquer Fee Flow — real values from events + on-chain balances ──
-  // Total fees = sum of (price - prevPayout) for all glazes
-  let totalFeesWei = 0n
-  for (const g of glazeCache) totalFeesWei += (g.price - g.prevPayout)
-  const totalFees = fmtWei(totalFeesWei)
+  // ── Conquer Fee Flow — per-glaze calculation using historical fee settings ──
+  const historicalFees = computeHistoricalGlazeFees()
+  const glazeLP = historicalFees.lpTotal
+  const glazeStaking = historicalFees.stakingTotal
+  const glazeDev = historicalFees.devTotal
+  const glazeFeesTotal = historicalFees.total
 
-  // Real on-chain balances for LP and staking
   const stakingEthNumForTable = fmtWei(BigInt(stakingEth || 0n))
-  const lpReceivedTotal = lpCurrentEth + lpUsedEth
   const devStakedWorldForTable = fmtWei(BigInt(devStaked || 0n))
 
-  // Dev fees = total fees minus what LP and staking received
-  const realDevFees = Math.max(0, totalFees - lpReceivedTotal - stakingEthNumForTable)
-
-  // Real percentages (for card labels)
-  const realLpPct = totalFees > 0 ? (lpReceivedTotal / totalFees * 100).toFixed(1) : '0'
-  const realStakingPct = totalFees > 0 ? (stakingEthNumForTable / totalFees * 100).toFixed(1) : '0'
-  const realDevPct = totalFees > 0 ? (realDevFees / totalFees * 100).toFixed(1) : '0'
+  // Percentages (from historical calculation)
+  const realLpPct = glazeFeesTotal > 0 ? (glazeLP / glazeFeesTotal * 100).toFixed(1) : '0'
+  const realStakingPct = glazeFeesTotal > 0 ? (glazeStaking / glazeFeesTotal * 100).toFixed(1) : '0'
+  const realDevPct = glazeFeesTotal > 0 ? (glazeDev / glazeFeesTotal * 100).toFixed(1) : '0'
 
   setText('tfa-glaze-lp-label', 'To LP Wallet (' + realLpPct + '%)')
   setText('tfa-glaze-staking-label', 'To Staking (' + realStakingPct + '%)')
   setText('tfa-glaze-dev-label', 'To devWallet (' + realDevPct + '%)')
 
-  setText('tfa-glaze-lp', fmtETH(lpReceivedTotal, 5) + ' ETH')
-  setText('tfa-glaze-lp-usd', fmtUSD(lpReceivedTotal * ETH_USD))
-  setText('tfa-glaze-staking', fmtETH(stakingEthNumForTable, 5) + ' ETH')
-  setText('tfa-glaze-staking-usd', fmtUSD(stakingEthNumForTable * ETH_USD))
-  setText('tfa-glaze-dev', fmtETH(realDevFees, 5) + ' ETH')
-  setText('tfa-glaze-dev-usd', fmtUSD(realDevFees * ETH_USD))
-  setText('tfa-glaze-total', fmtETH(totalFees, 5) + ' ETH')
-  setText('tfa-glaze-total-usd', fmtUSD(totalFees * ETH_USD))
+  setText('tfa-glaze-lp', fmtETH(glazeLP, 5) + ' ETH')
+  setText('tfa-glaze-lp-usd', fmtUSD(glazeLP * ETH_USD))
+  setText('tfa-glaze-staking', fmtETH(glazeStaking, 5) + ' ETH')
+  setText('tfa-glaze-staking-usd', fmtUSD(glazeStaking * ETH_USD))
+  setText('tfa-glaze-dev', fmtETH(glazeDev, 5) + ' ETH')
+  setText('tfa-glaze-dev-usd', fmtUSD(glazeDev * ETH_USD))
+  setText('tfa-glaze-total', fmtETH(glazeFeesTotal, 5) + ' ETH')
+  setText('tfa-glaze-total-usd', fmtUSD(glazeFeesTotal * ETH_USD))
 
   // ── Fee Distribution Summary table ──
-  // Reconciliation: compare on-chain totals vs event-derived totals
-  const glazeLP = glazeVol * GLAZE_LP_FRAC
-  const glazeStaking = glazeVol * GLAZE_STAKING_FRAC
+  // Reconciliation: compare historical calculation vs on-chain balances
+  const lpReceivedTotal = lpCurrentEth + lpUsedEth
   const lpDelta = Math.abs(glazeLP - lpReceivedTotal)
   const lpMatchOk = lpDelta < 0.001
   const stakingDelta = Math.abs(glazeStaking - stakingEthNumForTable)
@@ -1726,6 +1775,7 @@ async function refresh() {
       refreshGlazeCache(blockNum),
       refreshSwapCache(blockNum),
       refreshRefineCache(blockNum),
+      fetchFeeChangeHistory(blockNum),
     ])
     ;[
       totalStaked, rewardPerToken, stakingEth, botBalances, continents,
