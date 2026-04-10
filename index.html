@@ -390,20 +390,20 @@
   </section>
 
   <section>
-    <h2>Conquer Fee Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(15% per conquer · post-genesis)</span></h2>
+    <h2 id="conquer-fee-header">Conquer Fee Flow</h2>
     <div class="grid grid-4">
       <div class="card">
-        <div class="card-label">To LP Wallet (12%)</div>
+        <div class="card-label" id="tfa-glaze-lp-label">To LP Wallet</div>
         <div class="card-value blue" id="tfa-glaze-lp">—</div>
         <div class="card-sub" id="tfa-glaze-lp-usd">$—</div>
       </div>
       <div class="card">
-        <div class="card-label">To Staking (2%)</div>
+        <div class="card-label" id="tfa-glaze-staking-label">To Staking</div>
         <div class="card-value amber" id="tfa-glaze-staking">—</div>
         <div class="card-sub" id="tfa-glaze-staking-usd">$—</div>
       </div>
       <div class="card">
-        <div class="card-label">To devWallet (1%)</div>
+        <div class="card-label" id="tfa-glaze-dev-label">To devWallet</div>
         <div class="card-value purple" id="tfa-glaze-dev">—</div>
         <div class="card-sub" id="tfa-glaze-dev-usd">$—</div>
       </div>
@@ -558,7 +558,7 @@
       <div class="card">
         <div class="card-label">Total ETH Distributed</div>
         <div class="card-value purple" id="total-distributed">—</div>
-        <div class="card-sub" id="total-distributed-sub">est. (2% of conquer vol)</div>
+        <div class="card-sub" id="total-distributed-sub">est. (staking fee of conquer vol)</div>
       </div>
     </div>
   </section>
@@ -636,7 +636,7 @@ const ETH_USD = 2000
 const MAX_SUPPLY = 19950000
 const REFRESH_MS = 30000
 const HOLDER_REFUND = 0.85
-const STAKING_FEE_FRACTION = 0.02 // 2% of glaze price goes to staking
+let STAKING_FEE_FRACTION = 0.03 // updated live from contract each refresh
 const GAS_PER_TX = 0.00000094 // ETH per tx (measured)
 
 const CONTINENT_NAMES = ['Asia', 'Africa', 'Americas', 'Europe', 'Oceania']
@@ -656,6 +656,9 @@ const SEL = {
   feeGrowthGlobal0X128: '0xf3058399',
   feeGrowthGlobal1X128: '0x46141319',
   liquidity: '0x1a686502',
+  lpFeeBps: '0x3d5c5068',
+  stakingFeeBps: '0x807150b0',
+  devFeeBps: '0x55fb1d46',
 }
 
 // Refine tax flow constants (REFINE_TAX_BPS=1000 → 10% of refined amount)
@@ -665,11 +668,11 @@ const TAX_7D_FRAC   = 0.18 // → 7d+14d locked (orphans to team if empty)
 const TAX_14D_FRAC  = 0.09 // → 14d locked only (orphans to team if empty)
 const TAX_TEAM_FRAC = 0.10 // → devStakingWallet (always)
 
-// Glaze fee flow constants (post-genesis takeovers, 15% total to fees)
-const GLAZE_HOLDER_FRAC  = 0.85 // → previous holder
-const GLAZE_LP_FRAC      = 0.12 // → LP wallet
-const GLAZE_STAKING_FRAC = 0.02 // → staking contract
-const GLAZE_DEV_FRAC     = 0.01 // → devWallet
+// Conquer fee flow — updated live from contract each refresh
+const GLAZE_HOLDER_FRAC  = 0.85 // → previous holder (constant)
+let GLAZE_LP_FRAC      = 0.10   // → LP wallet (live from lpFeeBps)
+let GLAZE_STAKING_FRAC = 0.03   // → staking contract (live from stakingFeeBps)
+let GLAZE_DEV_FRAC     = 0.02   // → devWallet (live from devFeeBps)
 
 const DEV_WALLET = '0xbA5A2AC63e276aca5c257e33f98B9071026B58D5'
 const LP_WALLET  = '0x4fE13f891650933954De54C3971574aBd5eEcd13'
@@ -1344,6 +1347,7 @@ function renderTokenFeeAnalytics(args) {
     totalLocked7d, totalLocked14d,
     devStaked, devEarned, devWorldFree, totalStaked,
     lpWalletEth, stakingEth,
+    liveLpPct, liveStakingPct, liveDevPct,
   } = args
 
   // ── Pool Changes Since Deploy ──
@@ -1465,7 +1469,7 @@ function renderTokenFeeAnalytics(args) {
     {
       flow: 'Conquer → LP',
       recipient: 'lpWallet',
-      rate: '12%',
+      rate: liveLpPct,
       est: fmtETH(glazeLP, 5) + ' ETH',
       onchain: fmtETH(lpReceivedTotal, 5) + ' ETH',
       match: lpMatchOk ? okBadge : warnBadge(lpDelta),
@@ -1473,7 +1477,7 @@ function renderTokenFeeAnalytics(args) {
     {
       flow: 'Conquer → Staking',
       recipient: 'staking contract',
-      rate: '2%',
+      rate: liveStakingPct,
       est: fmtETH(glazeStaking, 5) + ' ETH',
       onchain: fmtETH(stakingEthNumForTable, 5) + ' ETH',
       match: stakingMatchOk ? okBadge : warnBadge(stakingDelta),
@@ -1481,7 +1485,7 @@ function renderTokenFeeAnalytics(args) {
     {
       flow: 'Conquer → Dev',
       recipient: 'devWallet',
-      rate: '1%',
+      rate: liveDevPct,
       est: fmtETH(glazeDev, 5) + ' ETH',
       onchain: dash,
       match: dash,
@@ -1606,13 +1610,15 @@ async function refresh() {
   setText('uptime', fmtUptime(uptimeSec))
   setText('deploy-date', new Date(DEPLOY_TS * 1000).toUTCString().slice(5, 22) + ' UTC')
 
-  // ─── Phase 1: core RPC (block + protocol stats + pool reserves + V3 fee growth) ───
+  // ─── Phase 1: core RPC (block + protocol stats + pool reserves + V3 fee growth + live fees) ───
   let blockNum, stats, wethReserve, worldReserve, tokenPrice
   let feeGrowth0Result, feeGrowth1Result, liquidityResult
+  let lpBpsHex, stakingBpsHex, devBpsHex
   try {
     [
       blockNum, stats, wethReserve, worldReserve,
       feeGrowth0Result, feeGrowth1Result, liquidityResult,
+      lpBpsHex, stakingBpsHex, devBpsHex,
     ] = await Promise.all([
       getBlockNumber(),
       getProtocolStats(),
@@ -1621,11 +1627,37 @@ async function refresh() {
       ethCall(POOL, SEL.feeGrowthGlobal0X128),
       ethCall(POOL, SEL.feeGrowthGlobal1X128),
       ethCall(POOL, SEL.liquidity),
+      ethCall(MINER, SEL.lpFeeBps),
+      ethCall(MINER, SEL.stakingFeeBps),
+      ethCall(MINER, SEL.devFeeBps),
     ])
   } catch (e) {
     console.error('Phase 1 error:', e)
     return
   }
+
+  // Live fee percentages from contract
+  const liveLpBps = parseInt(lpBpsHex, 16) || 1000
+  const liveStakingBps = parseInt(stakingBpsHex, 16) || 300
+  const liveDevBps = parseInt(devBpsHex, 16) || 200
+  const liveLpFrac = liveLpBps / 10000
+  const liveStakingFrac = liveStakingBps / 10000
+  const liveDevFrac = liveDevBps / 10000
+  const liveLpPct = (liveLpBps / 100) + '%'
+  const liveStakingPct = (liveStakingBps / 100) + '%'
+  const liveDevPct = (liveDevBps / 100) + '%'
+
+  // Update Conquer Fee Flow header + card labels
+  setText('conquer-fee-header', 'Conquer Fee Flow — LP ' + liveLpPct + ' | Stake ' + liveStakingPct + ' | Dev ' + liveDevPct)
+  setText('tfa-glaze-lp-label', 'To LP Wallet (' + liveLpPct + ')')
+  setText('tfa-glaze-staking-label', 'To Staking (' + liveStakingPct + ')')
+  setText('tfa-glaze-dev-label', 'To devWallet (' + liveDevPct + ')')
+
+  // Update global fracs used by renderTokenFeeAnalytics + renderProtocolOverviewFromGlazes
+  GLAZE_LP_FRAC = liveLpFrac
+  GLAZE_STAKING_FRAC = liveStakingFrac
+  GLAZE_DEV_FRAC = liveDevFrac
+  STAKING_FEE_FRACTION = liveStakingFrac
 
   // Pool + price (header)
   const wethR = fmtWei(wethReserve)
@@ -1721,6 +1753,7 @@ async function refresh() {
     totalLocked7d, totalLocked14d,
     devStaked, devEarned, devWorldFree, totalStaked,
     lpWalletEth, stakingEth,
+    liveLpPct, liveStakingPct, liveDevPct,
   })
 
   // Update price chart with latest swap data
