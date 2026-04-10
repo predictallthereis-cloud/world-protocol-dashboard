@@ -127,6 +127,8 @@
   footer .links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
   footer a { color: var(--dim); text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
   footer a:hover { color: var(--text); }
+
+  .section-divider { text-align: center; margin: 40px 0 20px 0; color: #666; font-size: 11px; letter-spacing: 3px; font-family: monospace; border-top: 1px solid #222; padding-top: 30px; }
 </style>
 </head>
 <body>
@@ -150,7 +152,9 @@
     </div>
   </header>
 
-  <!-- Price chart with timeframe selector -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="section-divider"><span>── MARKET ──</span></div>
+
   <section>
     <div class="chart-card">
       <div class="chart-header">
@@ -169,7 +173,6 @@
     </div>
   </section>
 
-  <!-- Protocol Overview -->
   <section>
     <h2>Protocol Overview</h2>
     <div class="grid grid-4">
@@ -196,7 +199,9 @@
     </div>
   </section>
 
-  <!-- Pool Analytics -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="section-divider"><span>── POOL &amp; LIQUIDITY ──</span></div>
+
   <section>
     <h2>Pool Analytics</h2>
     <div class="grid grid-4">
@@ -223,7 +228,6 @@
     </div>
   </section>
 
-  <!-- Token Stats -->
   <section>
     <h2>Token Stats</h2>
     <div class="grid grid-4">
@@ -250,79 +254,8 @@
     </div>
   </section>
 
-  <!-- Mining -->
   <section>
-    <h2>Mining</h2>
-    <div class="grid grid-3">
-      <div class="card">
-        <div class="card-label">Total Minted</div>
-        <div class="card-value purple" id="mining-minted">—</div>
-        <div class="card-sub" id="mining-minted-pct">% of max</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Mining Rate</div>
-        <div class="card-value green" id="mining-rate">—</div>
-        <div class="card-sub">avg WORLD/hour</div>
-      </div>
-      <div class="card">
-        <div class="card-label">Total Unrefined</div>
-        <div class="card-value amber" id="unrefined">—</div>
-        <div class="card-sub" id="unrefined-usd">$—</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Per-Continent Analytics -->
-  <section>
-    <h2>Per-Continent Analytics</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Continent</th>
-            <th class="right">Total Conquers</th>
-            <th class="right">Avg Hold Time</th>
-            <th class="right">Avg Entry Decay %</th>
-            <th class="right">Avg Price Paid</th>
-            <th class="right">Total ETH Volume</th>
-          </tr>
-        </thead>
-        <tbody id="continents-tbody">
-          <tr><td colspan="6" style="text-align:center;color:var(--dimmer);padding:20px">loading event history…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- Bot Performance -->
-  <section>
-    <h2>Bot Performance</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Wallet</th>
-            <th>Continent</th>
-            <th class="right">Cycles</th>
-            <th class="right">Avg Hold (min)</th>
-            <th class="right">ETH In</th>
-            <th class="right">ETH Out</th>
-            <th class="right">Gas Est</th>
-            <th class="right">P&amp;L</th>
-          </tr>
-        </thead>
-        <tbody id="bot-perf-tbody">
-          <tr><td colspan="8" style="text-align:center;color:var(--dimmer);padding:20px">loading event history…</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- Token & Fee Analytics -->
-  <section>
-    <h2>Token &amp; Fee Analytics</h2>
-
-    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:18px 0 10px;">Pool Changes Since Deploy</h3>
+    <h2>Pool Changes Since Deploy</h2>
     <div class="grid grid-4">
       <div class="card">
         <div class="card-label">WETH Δ</div>
@@ -345,8 +278,10 @@
         <div class="card-sub" id="tfa-price-change-sub">vs deploy</div>
       </div>
     </div>
+  </section>
 
-    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">LP Position</h3>
+  <section>
+    <h2>LP Position</h2>
     <div class="grid grid-4">
       <div class="card">
         <div class="card-label">LP Wallet ETH</div>
@@ -369,8 +304,55 @@
         <div class="card-sub" id="tfa-lp-added-sub">eth + matched WORLD</div>
       </div>
     </div>
+  </section>
 
-    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Refine Tax Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0">(10% per refine)</span></h3>
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="section-divider"><span>── MINING &amp; PROTOCOL ──</span></div>
+
+  <section>
+    <h2>Mining</h2>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="card-label">Total Minted</div>
+        <div class="card-value purple" id="mining-minted">—</div>
+        <div class="card-sub" id="mining-minted-pct">% of max</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Mining Rate</div>
+        <div class="card-value green" id="mining-rate">—</div>
+        <div class="card-sub">avg WORLD/hour</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Total Unrefined</div>
+        <div class="card-value amber" id="unrefined">—</div>
+        <div class="card-sub" id="unrefined-usd">$—</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Per-Continent Analytics</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Continent</th>
+            <th class="right">Total Conquers</th>
+            <th class="right">Avg Hold Time</th>
+            <th class="right">Avg Entry Decay %</th>
+            <th class="right">Avg Price Paid</th>
+            <th class="right">Total ETH Volume</th>
+          </tr>
+        </thead>
+        <tbody id="continents-tbody">
+          <tr><td colspan="6" style="text-align:center;color:var(--dimmer);padding:20px">loading event history…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Refine Tax Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(10% per refine)</span></h2>
     <div class="grid grid-2">
       <div class="card">
         <div class="card-label">Total Refines</div>
@@ -405,8 +387,10 @@
         <div class="card-sub" id="tfa-tax-team-sub">→ devWallet</div>
       </div>
     </div>
+  </section>
 
-    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Conquer Fee Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0">(15% per conquer · post-genesis)</span></h3>
+  <section>
+    <h2>Conquer Fee Flow <span style="color:#888;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px">(15% per conquer · post-genesis)</span></h2>
     <div class="grid grid-4">
       <div class="card">
         <div class="card-label">To LP Wallet (12%)</div>
@@ -429,8 +413,10 @@
         <div class="card-sub" id="tfa-glaze-total-usd">$—</div>
       </div>
     </div>
+  </section>
 
-    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Fee Distribution Summary</h3>
+  <section>
+    <h2>Fee Distribution Summary</h2>
     <div class="table-wrap">
       <table>
         <thead>
@@ -446,8 +432,61 @@
         <tbody id="fee-dist-tbody"></tbody>
       </table>
     </div>
+  </section>
 
-    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">Dev / Team Position</h3>
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="section-divider"><span>── BOTS ──</span></div>
+
+  <section>
+    <h2>Bot Performance</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Wallet</th>
+            <th>Continent</th>
+            <th class="right">Cycles</th>
+            <th class="right">Avg Hold (min)</th>
+            <th class="right">ETH In</th>
+            <th class="right">ETH Out</th>
+            <th class="right">Gas Est</th>
+            <th class="right">P&amp;L</th>
+          </tr>
+        </thead>
+        <tbody id="bot-perf-tbody">
+          <tr><td colspan="8" style="text-align:center;color:var(--dimmer);padding:20px">loading event history…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Bot Wallets</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Wallet</th>
+            <th>Continent</th>
+            <th>Address</th>
+            <th class="right">Funded</th>
+            <th class="right">Current</th>
+            <th class="right">Locked</th>
+            <th class="right">Adjusted</th>
+            <th class="right">Δ</th>
+            <th class="right">Remaining</th>
+          </tr>
+        </thead>
+        <tbody id="bots-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="section-divider"><span>── TEAM &amp; FINANCIALS ──</span></div>
+
+  <section>
+    <h2>Dev / Team Position</h2>
     <div class="grid grid-4">
       <div class="card">
         <div class="card-label">Dev WORLD Staked</div>
@@ -470,11 +509,10 @@
         <div class="card-sub" id="tfa-dev-pending-usd">$—</div>
       </div>
     </div>
+  </section>
 
-    <h3 style="font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666;margin:24px 0 10px;">
-      Lock Tiers
-      <span id="tfa-orphan-badge" style="display:none;background:#f59e0b18;border:1px solid #f59e0b40;color:#f59e0b;font-size:9px;font-weight:600;padding:3px 8px;border-radius:4px;margin-left:8px;letter-spacing:0;text-transform:none">⚠ No lockers — 27% extra to team</span>
-    </h3>
+  <section>
+    <h2>Lock Tiers <span id="tfa-orphan-badge" style="display:none;background:#f59e0b18;border:1px solid #f59e0b40;color:#f59e0b;font-size:9px;font-weight:600;padding:3px 8px;border-radius:4px;margin-left:8px;letter-spacing:0;text-transform:none">⚠ No lockers — 27% extra to team</span></h2>
     <div class="grid grid-4">
       <div class="card">
         <div class="card-label">Total Locked 7d</div>
@@ -499,7 +537,6 @@
     </div>
   </section>
 
-  <!-- Staking -->
   <section>
     <h2>Staking</h2>
     <div class="grid grid-4">
@@ -526,41 +563,13 @@
     </div>
   </section>
 
-  <!-- Bot Wallets -->
-  <section>
-    <h2>Bot Wallets</h2>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Wallet</th>
-            <th>Continent</th>
-            <th>Address</th>
-            <th class="right">Funded</th>
-            <th class="right">Current</th>
-            <th class="right">Locked</th>
-            <th class="right">Adjusted</th>
-            <th class="right">Δ</th>
-            <th class="right">Remaining</th>
-          </tr>
-        </thead>
-        <tbody id="bots-tbody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- Team P&L -->
   <section>
     <h2>Team P&amp;L</h2>
-
-    <!-- Toggle ETH/WORLD view -->
     <div class="timeframe-buttons" id="pnl-toggle" style="margin-bottom:20px;display:inline-flex">
       <button data-view="eth" class="active">ETH only</button>
       <button data-view="world">+ WORLD (minted free)</button>
       <button data-view="worldmarket">+ WORLD (at market cost)</button>
     </div>
-
-    <!-- Main P&L number -->
     <div style="margin-bottom:24px">
       <div class="card" style="display:inline-block;min-width:280px;padding:20px 28px">
         <div class="card-label">Net P&amp;L</div>
@@ -571,8 +580,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Invested vs Current -->
     <div class="grid grid-2" style="margin-bottom:20px">
       <div class="table-wrap">
         <table>
