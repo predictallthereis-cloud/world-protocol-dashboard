@@ -684,16 +684,16 @@ const TOPIC_REFINED = '0xe4b511e3f4d15fae8db8459b236992a496527b398f421ed29f6a3dd
 const TOPIC_FEES_CHANGED = '0xe06a46af1c04656f68e4f75cbbb23baa176651c7f99930a378ef9f1616dc2b8c'
 
 const BOT_WALLETS = [
-  { name: 'W0', continent: 'Asia',     addr: '0x9943eCf1C370Cb492c5c6Ab8A2bbFfC76A7c9704', funded: 0.026 },
-  { name: 'W1', continent: 'Asia',     addr: '0xd32464D8a04F2F5ac754c287515A676A2246d919', funded: 0.026 },
-  { name: 'W2', continent: 'Africa',   addr: '0x428feFE9e52E4147d21b47243CeDa07d5df2aFEB', funded: 0.022 },
-  { name: 'W3', continent: 'Africa',   addr: '0xFbD7e59D8EaEDaC530bEDe9B6f89f0265DEBA382', funded: 0.022 },
-  { name: 'W4', continent: 'Americas', addr: '0xdf130566b9a16ceB64144efda82b5362D3c43eB4', funded: 0.017 },
-  { name: 'W5', continent: 'Americas', addr: '0x0ecF560BdE3243DEDE37a4e90BC94116eC8B0ef1', funded: 0.017 },
-  { name: 'W6', continent: 'Europe',   addr: '0x425B7C2672747B4abA4B5B355a7368dDcD9F1DB1', funded: 0.013 },
-  { name: 'W7', continent: 'Europe',   addr: '0xE410501e5a6883904967dddE882a69089aE7bC37', funded: 0.013 },
-  { name: 'W8', continent: 'Oceania',  addr: '0x5eD31B88001B40664C76fE5F448C888ae1119a74', funded: 0.009 },
-  { name: 'W9', continent: 'Oceania',  addr: '0x6cbf2D103018Ba4a3202Bd9143672f86D268F766', funded: 0.009 },
+  { name: 'W0', continent: 'Asia',     addr: '0xaFB1bA0E5ca53f2c7a5e893bB2B2D21ba8DACd5E', funded: 0.026 },
+  { name: 'W1', continent: 'Asia',     addr: '0xc9b6dD7D04f83084aEEA4E533e3E16aC9491C605', funded: 0.026 },
+  { name: 'W2', continent: 'Africa',   addr: '0x9c5F69a7913cAe9fcbac0109538e6B0d4128514b', funded: 0.022 },
+  { name: 'W3', continent: 'Africa',   addr: '0x5CEA1f3e90D073C63Be0D7D3e21613A0177d7340', funded: 0.022 },
+  { name: 'W4', continent: 'Americas', addr: '0xbc6C7628455f473a1F58C7999513022412881414', funded: 0.017 },
+  { name: 'W5', continent: 'Americas', addr: '0x644cF244A8248b5CbD88855e48E46e7aA14fAE88', funded: 0.017 },
+  { name: 'W6', continent: 'Europe',   addr: '0xe7fcFCcD4ac89473659f180028658Eeb56dDBA92', funded: 0.013 },
+  { name: 'W7', continent: 'Europe',   addr: '0x72717a026BF0fdb92F73e726c2A2f55A204501Bc', funded: 0.013 },
+  { name: 'W8', continent: 'Oceania',  addr: '0x3316a30424256134b1Fc1aDC0F5dE8C7C269E3A6', funded: 0.009 },
+  { name: 'W9', continent: 'Oceania',  addr: '0x9903C382c0180aec58C227c9056260f71fF1556C', funded: 0.009 },
 ]
 const BOT_ADDR_SET = new Set(BOT_WALLETS.map(b => b.addr.toLowerCase()))
 const BOT_BY_ADDR = Object.fromEntries(BOT_WALLETS.map(b => [b.addr.toLowerCase(), b]))
