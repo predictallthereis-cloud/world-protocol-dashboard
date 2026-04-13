@@ -519,9 +519,10 @@
         <tbody id="calc-tbody"></tbody>
       </table>
     </div>
-    <div style="font-size:10px;color:var(--dimmer);margin-top:12px;line-height:1.6">
-      Breakeven accounts for: 10% refine tax, 1% pool fee, average hold time (D/2), and 15% entry threshold.<br>
-      Bot-to-bot adds 5% safety margin. Human-to-bot adds 10% margin.
+    <div style="font-size:10px;color:var(--dimmer);margin-top:12px;line-height:1.8;font-family:'JetBrains Mono',monospace">
+      <span style="color:var(--dim)">Formula:</span> breakeven = rate &times; (D/2) &times; tokenPrice &times; 0.90 &times; 0.99 / 0.15 = rate &times; 3600 &times; 3 &times; tokenPrice &times; 0.99<br>
+      <span style="color:var(--dim)">Includes:</span> 10% refine tax (&times;0.90), 1% pool fee (&times;0.99), avg hold time D/2, 15% entry threshold (/0.15).<br>
+      <span style="color:#22c4d4">Bot-to-bot</span> = breakeven &times; 0.95 (5% safety margin). <span style="color:#34c77b">Human-to-bot</span> = breakeven &times; 0.90 (10% margin).
     </div>
   </section>
 
