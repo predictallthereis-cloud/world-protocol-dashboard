@@ -2115,6 +2115,23 @@ refresh().catch(e => console.error(e))
         <td class="right mono" style="color:#34c77b">${fE(human)} ETH<br><span style="font-size:10px;color:var(--dimmer)">${fU(humanUSD)}</span></td>
       </tr>`)
     })
+    // Total row
+    const totalRate = CALC_RATES.reduce((s, c) => s + c.rate, 0)
+    const totalBe = totalRate * 3600 * 3 * tokenPriceETH * 0.99
+    const totalBot = totalBe * 0.95
+    const totalHuman = totalBe * 0.90
+    const totalBeUSD = totalBe * ethUSD
+    const totalBotUSD = totalBot * ethUSD
+    const totalHumanUSD = totalHuman * ethUSD
+    const fE = v => v < 0.0001 ? v.toExponential(3) : v.toFixed(6)
+    const fU = v => v < 0.01 ? '<$0.01' : '$' + v.toFixed(2)
+    tbody.insertAdjacentHTML('beforeend', `<tr style="border-top:2px solid var(--border);font-weight:700">
+      <td style="color:var(--text)">TOTAL</td>
+      <td class="mono" style="color:var(--dim)">${totalRate.toFixed(1)}/s</td>
+      <td class="right mono">${fE(totalBe)} ETH<br><span style="font-size:10px;color:var(--dimmer)">${fU(totalBeUSD)}</span></td>
+      <td class="right mono" style="color:#22c4d4">${fE(totalBot)} ETH<br><span style="font-size:10px;color:var(--dimmer)">${fU(totalBotUSD)}</span></td>
+      <td class="right mono" style="color:#34c77b">${fE(totalHuman)} ETH<br><span style="font-size:10px;color:var(--dimmer)">${fU(totalHumanUSD)}</span></td>
+    </tr>`)
   }
 
   worldSlider.addEventListener('input', () => {
