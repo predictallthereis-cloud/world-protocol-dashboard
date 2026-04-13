@@ -1838,25 +1838,60 @@ async function refresh() {
   const CONTINENT_NAMES = ['Asia', 'Africa', 'Americas', 'Europe', 'Oceania']
   const CONTINENT_COLORS = ['#f0b73a', '#e87840', '#34c77b', '#4e8ef7', '#22c4d4']
   const intelGrid = document.getElementById('intel-grid')
+  function fmtTime(sec) {
+    sec = Math.max(0, Math.floor(sec))
+    const m = Math.floor(sec / 60)
+    const s = sec % 60
+    return m > 0 ? `${m}m ${String(s).padStart(2,'0')}s` : `${s}s`
+  }
   if (intelGrid && tokenPrice > 0) {
     intelGrid.innerHTML = ''
     continents.forEach((c, i) => {
       const curPriceNum = fmtWei(c.currentPrice)
+      const lastPriceNum = fmtWei(c.lastPrice)
       const rateFloat = Number(c.effectiveRate) / 1e18
+      const secsRem = Number(c.secondsRemaining)
       const breakeven = rateFloat * 3600 * 3 * tokenPrice * 0.99
       const botTarget = breakeven * 0.95
       const humanTarget = breakeven * 0.90
+      const decayPct = lastPriceNum > 0 ? (curPriceNum / lastPriceNum) * 100 : 0
 
+      // Est. buy in: price decays linearly, bot enters at botTarget
+      // secsLeftAtTarget = botTarget * 3600 / lastPrice (if lastPrice > 0)
+      // estBuyIn = secsLeftAtTarget - secsRem (negative = already past)
+      let estBuyInLabel, estBuyInColor
+      const isExpired = c.currentPrice === 0n || secsRem === 0
+      if (isExpired) {
+        estBuyInLabel = 'EXPIRED'; estBuyInColor = '#ef4444'
+      } else if (curPriceNum <= botTarget) {
+        estBuyInLabel = 'NOW'; estBuyInColor = '#22c55e'
+      } else if (lastPriceNum > 0) {
+        const secsLeftAtTarget = (botTarget * 3600) / lastPriceNum
+        const estSec = secsRem - secsLeftAtTarget
+        if (estSec <= 0) {
+          estBuyInLabel = 'NOW'; estBuyInColor = '#22c55e'
+        } else if (estSec > secsRem) {
+          estBuyInLabel = 'Next cycle'; estBuyInColor = '#4e8ef7'
+        } else {
+          estBuyInLabel = '~' + fmtTime(estSec); estBuyInColor = estSec < 300 ? '#f59e0b' : '#8b8fa4'
+        }
+      } else {
+        estBuyInLabel = '—'; estBuyInColor = '#4e5168'
+      }
+
+      // Status badge
       let status, statusColor, statusBg
-      if (c.currentPrice === 0n) {
+      if (isExpired) {
         status = 'EXPIRED'; statusColor = '#ef4444'; statusBg = '#ef444418'
       } else if (curPriceNum <= botTarget) {
         status = 'READY'; statusColor = '#22c55e'; statusBg = '#22c55e18'
-      } else if (curPriceNum <= breakeven) {
+      } else if (estBuyInColor === '#f59e0b') {
         status = 'CLOSE'; statusColor = '#f59e0b'; statusBg = '#f59e0b18'
       } else {
         status = 'HOLDING'; statusColor = '#4e8ef7'; statusBg = '#4e8ef718'
       }
+
+      const timeLeftStr = isExpired ? 'EXPIRED' : secsRem > 36000 ? 'Genesis' : fmtTime(secsRem)
 
       intelGrid.insertAdjacentHTML('beforeend', `
         <div class="card" style="border-left:3px solid ${CONTINENT_COLORS[i]};padding:14px 16px">
@@ -1865,14 +1900,22 @@ async function refresh() {
             <span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;background:${statusBg};color:${statusColor};letter-spacing:0.5px">${status}</span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">
-            <span style="color:var(--dimmer)">Price</span>
+            <span style="color:var(--dimmer)">Last Price</span>
+            <span class="right mono" style="color:var(--dim)">${fmtETH(lastPriceNum, 6)} ETH</span>
+            <span style="color:var(--dimmer)">Current Price</span>
             <span class="right mono" style="color:var(--text)">${fmtETH(curPriceNum, 6)} ETH</span>
-            <span style="color:var(--dimmer)">Breakeven</span>
-            <span class="right mono" style="color:var(--dim)">${fmtETH(breakeven, 6)} ETH</span>
+            <span style="color:var(--dimmer)">Decay</span>
+            <span class="right mono" style="color:${decayPct > 60 ? '#4e8ef7' : decayPct > 30 ? '#f59e0b' : '#ef4444'}">${decayPct.toFixed(1)}%</span>
+            <span style="color:var(--dimmer)">Time Left</span>
+            <span class="right mono" style="color:var(--text)">${timeLeftStr}</span>
+            <span style="color:var(--dimmer);border-top:1px solid var(--border);padding-top:4px;margin-top:2px">Breakeven</span>
+            <span class="right mono" style="color:var(--dim);border-top:1px solid var(--border);padding-top:4px;margin-top:2px">${fmtETH(breakeven, 6)} ETH</span>
             <span style="color:var(--dimmer)">Bot (5%)</span>
             <span class="right mono" style="color:#22c4d4">${fmtETH(botTarget, 6)} ETH</span>
             <span style="color:var(--dimmer)">Human (10%)</span>
             <span class="right mono" style="color:#34c77b">${fmtETH(humanTarget, 6)} ETH</span>
+            <span style="color:var(--dimmer);border-top:1px solid var(--border);padding-top:4px;margin-top:2px">Est. Buy In</span>
+            <span class="right mono" style="color:${estBuyInColor};font-weight:600;border-top:1px solid var(--border);padding-top:4px;margin-top:2px">${estBuyInLabel}</span>
           </div>
         </div>
       `)
