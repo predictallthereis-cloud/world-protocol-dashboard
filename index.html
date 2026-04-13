@@ -483,6 +483,16 @@
   </section>
 
   <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="section-divider"><span>── BOT INTELLIGENCE ──</span></div>
+
+  <section>
+    <h2>Breakeven & Entry Targets</h2>
+    <div class="grid grid-5" id="intel-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
   <div class="section-divider"><span>── TEAM &amp; FINANCIALS ──</span></div>
 
   <section>
@@ -756,8 +766,11 @@ async function getContinentInfo(continentId) {
   const hex = result.replace(/^0x/, '')
   const word = (i) => hex.slice(i * 64, (i + 1) * 64)
   const holder = ('0x' + word(1).slice(24)).toLowerCase()
+  const currentPrice = BigInt('0x' + word(2))
+  const effectiveRate = BigInt('0x' + word(3))
   const lastPrice = BigInt('0x' + word(4))
-  return { holder, lastPrice }
+  const secondsRemaining = BigInt('0x' + word(5))
+  return { holder, currentPrice, effectiveRate, lastPrice, secondsRemaining }
 }
 
 // Chunked log fetcher (Base Sepolia public RPC caps eth_getLogs windows)
@@ -1820,6 +1833,51 @@ async function refresh() {
 
   // Update price chart with latest swap data
   updatePriceChart()
+
+  // ── Bot Intelligence ──
+  const RATES = [1.2, 1.0, 0.8, 0.6, 0.4]
+  const CONTINENT_NAMES = ['Asia', 'Africa', 'Americas', 'Europe', 'Oceania']
+  const CONTINENT_COLORS = ['#f0b73a', '#e87840', '#34c77b', '#4e8ef7', '#22c4d4']
+  const intelGrid = document.getElementById('intel-grid')
+  if (intelGrid && tokenPrice > 0) {
+    intelGrid.innerHTML = ''
+    continents.forEach((c, i) => {
+      const curPriceNum = fmtWei(c.currentPrice)
+      const breakeven = RATES[i] * 3600 * tokenPrice * 0.99
+      const botTarget = breakeven * 0.95
+      const humanTarget = breakeven * 0.90
+
+      let status, statusColor, statusBg
+      if (c.currentPrice === 0n) {
+        status = 'EXPIRED'; statusColor = '#ef4444'; statusBg = '#ef444418'
+      } else if (curPriceNum <= botTarget) {
+        status = 'READY'; statusColor = '#22c55e'; statusBg = '#22c55e18'
+      } else if (curPriceNum <= breakeven) {
+        status = 'CLOSE'; statusColor = '#f59e0b'; statusBg = '#f59e0b18'
+      } else {
+        status = 'HOLDING'; statusColor = '#4e8ef7'; statusBg = '#4e8ef718'
+      }
+
+      intelGrid.insertAdjacentHTML('beforeend', `
+        <div class="card" style="border-left:3px solid ${CONTINENT_COLORS[i]};padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="color:${CONTINENT_COLORS[i]};font-weight:700;font-size:13px">${CONTINENT_NAMES[i]} <span style="font-weight:400;font-size:10px;color:var(--dimmer)">${RATES[i]}/s</span></span>
+            <span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;background:${statusBg};color:${statusColor};letter-spacing:0.5px">${status}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">
+            <span style="color:var(--dimmer)">Price</span>
+            <span class="right mono" style="color:var(--text)">${fmtETH(curPriceNum, 6)} ETH</span>
+            <span style="color:var(--dimmer)">Breakeven</span>
+            <span class="right mono" style="color:var(--dim)">${fmtETH(breakeven, 6)} ETH</span>
+            <span style="color:var(--dimmer)">Bot (5%)</span>
+            <span class="right mono" style="color:#22c4d4">${fmtETH(botTarget, 6)} ETH</span>
+            <span style="color:var(--dimmer)">Human (10%)</span>
+            <span class="right mono" style="color:#34c77b">${fmtETH(humanTarget, 6)} ETH</span>
+          </div>
+        </div>
+      `)
+    })
+  }
 
   // Staking
   const totalStakedNum = fmtWei(totalStaked)
