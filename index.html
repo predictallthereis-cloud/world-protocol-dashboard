@@ -1848,25 +1848,30 @@ async function refresh() {
     intelGrid.innerHTML = ''
     continents.forEach((c, i) => {
       const curPriceNum = fmtWei(c.currentPrice)
-      const lastPriceNum = fmtWei(c.lastPrice)
       const rateFloat = Number(c.effectiveRate) / 1e18
       const secsRem = Number(c.secondsRemaining)
       const breakeven = rateFloat * 3600 * 3 * tokenPrice * 0.99
       const botTarget = breakeven * 0.95
       const humanTarget = breakeven * 0.90
-      const decayPct = lastPriceNum > 0 ? (curPriceNum / lastPriceNum) * 100 : 0
 
-      // Est. buy in: price decays linearly, bot enters at botTarget
-      // secsLeftAtTarget = botTarget * 3600 / lastPrice (if lastPrice > 0)
-      // estBuyIn = secsLeftAtTarget - secsRem (negative = already past)
+      // Entry price = price at start of this cycle (derived from linear decay)
+      const startPrice = secsRem > 0 && curPriceNum > 0
+        ? curPriceNum * 3600 / secsRem
+        : fmtWei(c.lastPrice)
+      const decayPct = startPrice > 0 ? (curPriceNum / startPrice) * 100 : 0
+
+      // Est. buy in: price decays linearly from startPrice to 0 in 3600s
+      // bot enters when curPrice <= botTarget
+      // curPrice(t) = startPrice * t / 3600 where t = secsRemaining
+      // secsLeftAtTarget = botTarget * 3600 / startPrice
       let estBuyInLabel, estBuyInColor
       const isExpired = c.currentPrice === 0n || secsRem === 0
       if (isExpired) {
         estBuyInLabel = 'EXPIRED'; estBuyInColor = '#ef4444'
       } else if (curPriceNum <= botTarget) {
         estBuyInLabel = 'NOW'; estBuyInColor = '#22c55e'
-      } else if (lastPriceNum > 0) {
-        const secsLeftAtTarget = (botTarget * 3600) / lastPriceNum
+      } else if (startPrice > 0) {
+        const secsLeftAtTarget = (botTarget * 3600) / startPrice
         const estSec = secsRem - secsLeftAtTarget
         if (estSec <= 0) {
           estBuyInLabel = 'NOW'; estBuyInColor = '#22c55e'
@@ -1900,8 +1905,8 @@ async function refresh() {
             <span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;background:${statusBg};color:${statusColor};letter-spacing:0.5px">${status}</span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">
-            <span style="color:var(--dimmer)">Last Price</span>
-            <span class="right mono" style="color:var(--dim)">${fmtETH(lastPriceNum, 6)} ETH</span>
+            <span style="color:var(--dimmer)">Entry Price</span>
+            <span class="right mono" style="color:var(--dim)">${fmtETH(startPrice, 6)} ETH</span>
             <span style="color:var(--dimmer)">Current Price</span>
             <span class="right mono" style="color:var(--text)">${fmtETH(curPriceNum, 6)} ETH</span>
             <span style="color:var(--dimmer)">Decay</span>
