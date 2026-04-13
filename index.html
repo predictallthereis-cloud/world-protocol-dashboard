@@ -1890,6 +1890,8 @@ async function refresh() {
   }
   if (intelGrid && tokenPrice > 0) {
     intelGrid.innerHTML = ''
+    const oldNote = document.getElementById('intel-note')
+    if (oldNote) oldNote.remove()
     continents.forEach((c, i) => {
       const curPriceNum = fmtWei(c.currentPrice)
       const rateFloat = Number(c.effectiveRate) / 1e18
@@ -1942,6 +1944,12 @@ async function refresh() {
 
       const timeLeftStr = isExpired ? 'EXPIRED' : secsRem > 36000 ? 'Genesis' : fmtTime(secsRem)
 
+      // Est. P&L per cycle (bot-to-bot: enters at botTarget, revenue = breakeven)
+      const pnlEth = breakeven - botTarget
+      const pnlUSD = pnlEth * ETH_USD
+      const pnlLabel = pnlEth > 0 ? '+' + fmtETH(pnlEth, 6) + ' ETH' : fmtETH(pnlEth, 6) + ' ETH'
+      const pnlUSDLabel = pnlUSD >= 0.01 ? '+$' + pnlUSD.toFixed(2) : pnlUSD > 0 ? '+<$0.01' : '$0.00'
+
       intelGrid.insertAdjacentHTML('beforeend', `
         <div class="card" style="border-left:3px solid ${CONTINENT_COLORS[i]};padding:14px 16px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -1965,10 +1973,14 @@ async function refresh() {
             <span class="right mono" style="color:#34c77b">${fmtETH(humanTarget, 6)} ETH</span>
             <span style="color:var(--dimmer);border-top:1px solid var(--border);padding-top:4px;margin-top:2px">Est. Buy In</span>
             <span class="right mono" style="color:${estBuyInColor};font-weight:600;border-top:1px solid var(--border);padding-top:4px;margin-top:2px">${estBuyInLabel}</span>
+            <span style="color:var(--dimmer)">Est. P&amp;L</span>
+            <span class="right mono" style="color:#22c55e;font-weight:600">${pnlLabel} <span style="font-size:9px;color:var(--dimmer)">(+5.0%)</span><br><span style="font-size:10px;color:var(--dimmer)">${pnlUSDLabel}</span></span>
           </div>
         </div>
       `)
     })
+    // Note
+    intelGrid.insertAdjacentHTML('afterend', '<div id="intel-note" style="font-size:10px;color:var(--dimmer);margin-top:8px">Est. P&amp;L assumes bot-to-bot cycling — breakeven minus entry price per cycle.</div>')
   }
 
   // Staking
