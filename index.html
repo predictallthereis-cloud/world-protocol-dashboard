@@ -1944,10 +1944,12 @@ async function refresh() {
 
       const timeLeftStr = isExpired ? 'EXPIRED' : secsRem > 36000 ? 'Genesis' : fmtTime(secsRem)
 
-      // WORLD mined until bot enters
+      // WORLD mined: total hold from entry to bot buy-in
+      const secsElapsed = 3600 - secsRem // time since holder entered
       const secsLeftAtTarget = startPrice > 0 ? (botTarget * 3600) / startPrice : 0
-      const holdSecs = Math.max(0, secsRem - secsLeftAtTarget)
-      const worldMined = rateFloat * holdSecs * 0.90 // 90% after refine tax
+      const secsToBotEntry = Math.max(0, secsRem - secsLeftAtTarget)
+      const totalHoldSecs = secsElapsed + secsToBotEntry
+      const worldMined = rateFloat * totalHoldSecs * 0.90 // 90% after refine tax
       const worldValue = worldMined * tokenPrice // in ETH
 
       // Holder P&L: ETH payout + WORLD mined value - entry cost
