@@ -686,8 +686,16 @@ const DEPLOY_BLOCK = 40165112
 const DEPLOY_PRICE = 1.857e-7
 const DEPLOY_WETH = 0.195
 const DEPLOY_WORLD = 1050000
-const ETH_USD = 2000
+let ETH_USD = 2000
 const MAX_SUPPLY = 19950000
+
+async function fetchEthPrice() {
+  try {
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd')
+    const d = await r.json()
+    if (d.ethereum && d.ethereum.usd > 0) ETH_USD = d.ethereum.usd
+  } catch {}
+}
 const REFRESH_MS = 30000
 const HOLDER_REFUND = 0.85
 let STAKING_FEE_FRACTION = 0.03 // updated live from contract each refresh
@@ -1727,6 +1735,9 @@ async function refresh() {
   const uptimeSec = now - DEPLOY_TS
   setText('uptime', fmtUptime(uptimeSec))
   setText('deploy-date', new Date(DEPLOY_TS * 1000).toUTCString().slice(5, 22) + ' UTC')
+
+  // ─── Phase 0: ETH price from CoinGecko ───
+  await fetchEthPrice()
 
   // ─── Phase 1: core RPC (block + protocol stats + pool reserves + V3 fee growth + live fees) ───
   let blockNum, stats, wethReserve, worldReserve, tokenPrice
