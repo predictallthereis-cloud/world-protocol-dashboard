@@ -1965,7 +1965,7 @@ async function refresh() {
       // Holder P&L: ETH payout + WORLD mined value - price actually paid
       const payout = botTarget * 0.85
       const pnlEth = payout + worldValue - pricePaid
-      const pnlPct = startPrice > 0 ? (pnlEth / startPrice) * 100 : 0
+      const pnlPct = pricePaid > 0 ? (pnlEth / pricePaid) * 100 : 0
       const pnlUSD = pnlEth * ETH_USD
       const pnlSign = pnlEth >= 0 ? '+' : ''
       const pnlColor = pnlEth >= 0 ? '#22c55e' : '#ef4444'
