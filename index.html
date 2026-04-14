@@ -1966,7 +1966,7 @@ async function refresh() {
       const secsToBotEntry = Math.max(0, secsRem - secsLeftAtTarget)
       const totalHoldSecs = secsElapsed + secsToBotEntry
       const worldMined = rateFloat * totalHoldSecs * 0.90 // 90% after refine tax
-      const worldValue = worldMined * tokenPrice // in ETH
+      const worldValue = worldMined * tokenPrice * 0.99 // in ETH, minus 1% pool fee on sell
 
       // Holder P&L: ETH payout + WORLD mined value - price actually paid
       const payout = entryTarget * 0.85
@@ -2014,7 +2014,7 @@ async function refresh() {
       `)
     })
     // Note
-    intelGrid.insertAdjacentHTML('afterend', '<div id="intel-note" style="font-size:10px;color:var(--dimmer);margin-top:8px">P&amp;L at Bot Buy = 85% of expected bot entry + WORLD mined (90% after tax) &minus; price paid. Bot enters at 95% BE (bot-to-bot) or 90% BE (human-to-bot).</div>')
+    intelGrid.insertAdjacentHTML('afterend', '<div id="intel-note" style="font-size:10px;color:var(--dimmer);margin-top:8px">P&amp;L at Bot Buy = 85% of expected bot entry + WORLD mined value (after 10% refine tax + 1% pool fee) &minus; price paid. Bot enters at 95% BE (bot-to-bot) or 90% BE (human-to-bot).</div>')
   }
 
   // Staking
