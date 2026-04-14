@@ -1911,6 +1911,13 @@ async function refresh() {
       const botTarget = breakeven * 0.95
       const humanTarget = breakeven * 0.90
 
+      // Holder type detection
+      const isBot = BOT_ADDR_SET.has(c.holder)
+      const holderType = isBot ? 'BOT' : 'HUMAN'
+      const holderColor = isBot ? '#4e8ef7' : '#f59e0b'
+      const entryTarget = isBot ? botTarget : humanTarget // 95% or 90%
+      const entryTargetLabel = isBot ? '95% BE' : '90% BE'
+
       // pricePaid = what the holder actually paid (from contract)
       const pricePaid = fmtWei(c.lastPrice)
       // startDecayPrice = price at start of decay (2x pricePaid, for time calculations)
@@ -1920,13 +1927,12 @@ async function refresh() {
       const decayPct = startDecayPrice > 0 ? (curPriceNum / startDecayPrice) * 100 : 0
 
       // Est. buy in: price decays linearly from startDecayPrice to 0 in 3600s
-      // secsLeftAtTarget = botTarget * 3600 / startDecayPrice
       let estBuyInLabel, estBuyInColor
       const isExpired = c.currentPrice === 0n || secsRem === 0
-      const secsLeftAtTarget = startDecayPrice > 0 ? (botTarget * 3600) / startDecayPrice : 0
+      const secsLeftAtTarget = startDecayPrice > 0 ? (entryTarget * 3600) / startDecayPrice : 0
       if (isExpired) {
         estBuyInLabel = 'EXPIRED'; estBuyInColor = '#ef4444'
-      } else if (curPriceNum <= botTarget) {
+      } else if (curPriceNum <= entryTarget) {
         estBuyInLabel = 'NOW'; estBuyInColor = '#22c55e'
       } else if (startDecayPrice > 0) {
         const estSec = secsRem - secsLeftAtTarget
@@ -1945,7 +1951,7 @@ async function refresh() {
       let status, statusColor, statusBg
       if (isExpired) {
         status = 'EXPIRED'; statusColor = '#ef4444'; statusBg = '#ef444418'
-      } else if (curPriceNum <= botTarget) {
+      } else if (curPriceNum <= entryTarget) {
         status = 'READY'; statusColor = '#22c55e'; statusBg = '#22c55e18'
       } else if (estBuyInColor === '#f59e0b') {
         status = 'CLOSE'; statusColor = '#f59e0b'; statusBg = '#f59e0b18'
@@ -1963,7 +1969,7 @@ async function refresh() {
       const worldValue = worldMined * tokenPrice // in ETH
 
       // Holder P&L: ETH payout + WORLD mined value - price actually paid
-      const payout = botTarget * 0.85
+      const payout = entryTarget * 0.85
       const pnlEth = payout + worldValue - pricePaid
       const pnlPct = pricePaid > 0 ? (pnlEth / pricePaid) * 100 : 0
       const pnlUSD = pnlEth * ETH_USD
@@ -1977,7 +1983,7 @@ async function refresh() {
       intelGrid.insertAdjacentHTML('beforeend', `
         <div class="card" style="border-left:3px solid ${CONTINENT_COLORS[i]};padding:14px 16px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <span style="color:${CONTINENT_COLORS[i]};font-weight:700;font-size:13px">${CONTINENT_NAMES[i]} <span style="font-weight:400;font-size:10px;color:var(--dimmer)">${rateFloat.toFixed(1)}/s</span></span>
+            <span style="color:${CONTINENT_COLORS[i]};font-weight:700;font-size:13px">${CONTINENT_NAMES[i]} <span style="font-weight:400;font-size:10px;color:var(--dimmer)">${rateFloat.toFixed(1)}/s</span> <span style="font-size:8px;font-weight:700;padding:2px 6px;border-radius:3px;background:${holderColor}18;color:${holderColor};letter-spacing:0.3px;margin-left:4px">${holderType}</span></span>
             <span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:4px;background:${statusBg};color:${statusColor};letter-spacing:0.5px">${status}</span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">
@@ -1997,16 +2003,18 @@ async function refresh() {
             <span class="right mono" style="color:#34c77b">${fmtETH(humanTarget, 6)} ETH</span>
             <span style="color:var(--dimmer);border-top:1px solid var(--border);padding-top:4px;margin-top:2px">Est. Buy In</span>
             <span class="right mono" style="color:${estBuyInColor};font-weight:600;border-top:1px solid var(--border);padding-top:4px;margin-top:2px">${estBuyInLabel}</span>
+            <span style="color:var(--dimmer)">Bot Entry At</span>
+            <span class="right mono" style="color:${isBot ? '#22c4d4' : '#34c77b'}">${fmtETH(entryTarget, 6)} ETH <span style="font-size:9px;color:var(--dimmer)">(${entryTargetLabel})</span></span>
             <span style="color:var(--dimmer)">WORLD Mined</span>
             <span class="right mono" style="color:var(--text)">~${worldMined.toFixed(1)} WORLD<br><span style="font-size:10px;color:var(--dimmer)">${worldMinedUSD >= 0.01 ? '$' + worldMinedUSD.toFixed(2) : '<$0.01'}</span></span>
-            <span style="color:var(--dimmer)">Holder P&amp;L</span>
+            <span style="color:var(--dimmer)">P&amp;L at Bot Buy</span>
             <span class="right mono" style="color:${pnlColor};font-weight:600">${pnlLabel} <span style="font-size:9px">(${pnlPctLabel})</span><br><span style="font-size:10px;color:var(--dimmer)">${pnlUSDLabel}</span></span>
           </div>
         </div>
       `)
     })
     // Note
-    intelGrid.insertAdjacentHTML('afterend', '<div id="intel-note" style="font-size:10px;color:var(--dimmer);margin-top:8px">Holder P&amp;L = 85% of bot entry + WORLD mined value (90% after tax) &minus; entry cost. Bot enters at 95% of breakeven.</div>')
+    intelGrid.insertAdjacentHTML('afterend', '<div id="intel-note" style="font-size:10px;color:var(--dimmer);margin-top:8px">P&amp;L at Bot Buy = 85% of expected bot entry + WORLD mined (90% after tax) &minus; price paid. Bot enters at 95% BE (bot-to-bot) or 90% BE (human-to-bot).</div>')
   }
 
   // Staking
