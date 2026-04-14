@@ -1911,24 +1911,24 @@ async function refresh() {
       const botTarget = breakeven * 0.95
       const humanTarget = breakeven * 0.90
 
-      // Entry price = price at start of this cycle (derived from linear decay)
-      const startPrice = secsRem > 0 && curPriceNum > 0
+      // pricePaid = what the holder actually paid (from contract)
+      const pricePaid = fmtWei(c.lastPrice)
+      // startDecayPrice = price at start of decay (2x pricePaid, for time calculations)
+      const startDecayPrice = secsRem > 0 && curPriceNum > 0
         ? curPriceNum * 3600 / secsRem
-        : fmtWei(c.lastPrice)
-      const decayPct = startPrice > 0 ? (curPriceNum / startPrice) * 100 : 0
+        : pricePaid
+      const decayPct = startDecayPrice > 0 ? (curPriceNum / startDecayPrice) * 100 : 0
 
-      // Est. buy in: price decays linearly from startPrice to 0 in 3600s
-      // bot enters when curPrice <= botTarget
-      // curPrice(t) = startPrice * t / 3600 where t = secsRemaining
-      // secsLeftAtTarget = botTarget * 3600 / startPrice
+      // Est. buy in: price decays linearly from startDecayPrice to 0 in 3600s
+      // secsLeftAtTarget = botTarget * 3600 / startDecayPrice
       let estBuyInLabel, estBuyInColor
       const isExpired = c.currentPrice === 0n || secsRem === 0
+      const secsLeftAtTarget = startDecayPrice > 0 ? (botTarget * 3600) / startDecayPrice : 0
       if (isExpired) {
         estBuyInLabel = 'EXPIRED'; estBuyInColor = '#ef4444'
       } else if (curPriceNum <= botTarget) {
         estBuyInLabel = 'NOW'; estBuyInColor = '#22c55e'
-      } else if (startPrice > 0) {
-        const secsLeftAtTarget = (botTarget * 3600) / startPrice
+      } else if (startDecayPrice > 0) {
         const estSec = secsRem - secsLeftAtTarget
         if (estSec <= 0) {
           estBuyInLabel = 'NOW'; estBuyInColor = '#22c55e'
@@ -1957,15 +1957,14 @@ async function refresh() {
 
       // WORLD mined: total hold from entry to bot buy-in
       const secsElapsed = 3600 - secsRem // time since holder entered
-      const secsLeftAtTarget = startPrice > 0 ? (botTarget * 3600) / startPrice : 0
       const secsToBotEntry = Math.max(0, secsRem - secsLeftAtTarget)
       const totalHoldSecs = secsElapsed + secsToBotEntry
       const worldMined = rateFloat * totalHoldSecs * 0.90 // 90% after refine tax
       const worldValue = worldMined * tokenPrice // in ETH
 
-      // Holder P&L: ETH payout + WORLD mined value - entry cost
+      // Holder P&L: ETH payout + WORLD mined value - price actually paid
       const payout = botTarget * 0.85
-      const pnlEth = payout + worldValue - startPrice
+      const pnlEth = payout + worldValue - pricePaid
       const pnlPct = startPrice > 0 ? (pnlEth / startPrice) * 100 : 0
       const pnlUSD = pnlEth * ETH_USD
       const pnlSign = pnlEth >= 0 ? '+' : ''
@@ -1983,7 +1982,7 @@ async function refresh() {
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px">
             <span style="color:var(--dimmer)">Entry Price</span>
-            <span class="right mono" style="color:var(--dim)">${fmtETH(startPrice, 6)} ETH</span>
+            <span class="right mono" style="color:var(--dim)">${fmtETH(pricePaid, 6)} ETH</span>
             <span style="color:var(--dimmer)">Current Price</span>
             <span class="right mono" style="color:var(--text)">${fmtETH(curPriceNum, 6)} ETH</span>
             <span style="color:var(--dimmer)">Decay</span>
